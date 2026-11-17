@@ -31,8 +31,12 @@ export type ContractSubject = {
    * cookie), so an exchange is decided by the server, not the client.
    */
   newOAuthSession(): Promise<AuthProvider>
-  /** Setup only: a confirmed user that can sign in with this password. */
-  seedUser(email: string, password: string): Promise<void>
+  /**
+   * Setup only: a confirmed user with this password. By default the password
+   * is verified (proven with the mailbox), as for an ordinary account;
+   * `passwordVerified: false` is an account whose password nobody proved.
+   */
+  seedUser(email: string, password: string, options?: { passwordVerified?: boolean }): Promise<void>
   /** The 6-digit code most recently sent to `email`. */
   readOtp(email: string): Promise<string>
   /** Called once at the end with every email the suite used. */
@@ -54,25 +58,81 @@ export function authProviderContract(name: string, subject: ContractSubject) {
 
     afterAll(() => subject.cleanup(emails))
 
-    it('signs up with a password, then signs in with the same credentials', async () => {
+    it('signs up with a password without a session: the emailed code confirms the account', async () => {
       const email = newEmail('signup')
+      const session = subject.newSession()
 
-      const signUpSession = subject.newSession()
-      const signedUp = await signUpSession.signUpWithPassword({
+      const signedUp = await session.signUpWithPassword({
         email,
         password: PASSWORD,
         name: 'Contract',
       })
-      const signedIn = await subject.newSession().signInWithPassword({ email, password: PASSWORD })
 
-      expect(signedUp).toEqual({
+      expect(signedUp).toEqual({ ok: true, value: { confirmationRequired: true } })
+      expect(await session.getCurrentIdentity()).toBeNull()
+      const verified = await session.verifyOtp({ email, token: await subject.readOtp(email) })
+      expect(verified).toEqual({ ok: true, value: { userId: expect.any(String), email } })
+      // Confirming the email does not make the password trusted.
+      expect(await session.probePassword({ email, password: PASSWORD })).toEqual({
         ok: true,
-        value: { userId: expect.any(String), email },
+        value: 'unverified',
       })
-      expect(signedIn).toEqual(signedUp)
-      // Signed in right away. Holds while email confirmations are off
-      // (supabase/config.toml); turning them on must fail this line.
-      expect(await signUpSession.getCurrentIdentity()).toEqual(signedIn.ok && signedIn.value)
+    })
+
+    it('refuses a password-only sign-in while the password is unverified, even when it is right', async () => {
+      const email = newEmail('unverified')
+      await subject.seedUser(email, PASSWORD, { passwordVerified: false })
+      const session = subject.newSession()
+
+      const result = await session.signInWithPassword({ email, password: PASSWORD })
+
+      expect(result).toEqual({
+        ok: false,
+        error: expect.objectContaining({ code: 'PASSWORD_VERIFICATION_REQUIRED' }),
+      })
+      expect(await session.getCurrentIdentity()).toBeNull()
+      // A wrong password reads the same as for any account.
+      expect(await session.signInWithPassword({ email, password: 'nope-nope-1' })).toEqual({
+        ok: false,
+        error: expect.objectContaining({
+          code: 'UNAUTHENTICATED',
+          message: AUTH_ERROR_MESSAGES.invalidCredentials,
+        }),
+      })
+    })
+
+    it('checks a password without signing the session in, telling verified from unverified', async () => {
+      const verifiedEmail = newEmail('probe-verified')
+      const unverifiedEmail = newEmail('probe-unverified')
+      await subject.seedUser(verifiedEmail, PASSWORD)
+      await subject.seedUser(unverifiedEmail, PASSWORD, { passwordVerified: false })
+      const session = subject.newSession()
+
+      const verified = await session.probePassword({ email: verifiedEmail, password: PASSWORD })
+      const unverified = await session.probePassword({ email: unverifiedEmail, password: PASSWORD })
+      const wrong = await session.probePassword({ email: verifiedEmail, password: 'nope-nope-1' })
+
+      expect(verified).toEqual({ ok: true, value: 'verified' })
+      expect(unverified).toEqual({ ok: true, value: 'unverified' })
+      expect(wrong).toEqual({
+        ok: false,
+        error: expect.objectContaining({
+          code: 'UNAUTHENTICATED',
+          message: AUTH_ERROR_MESSAGES.invalidCredentials,
+        }),
+      })
+      expect(await session.getCurrentIdentity()).toBeNull()
+    })
+
+    it('checks a password without signing a signed-in session out', async () => {
+      const email = newEmail('probe-signed-in')
+      await subject.seedUser(email, PASSWORD)
+      const session = subject.newSession()
+      const signedIn = await session.signInWithPassword({ email, password: PASSWORD })
+
+      await session.probePassword({ email, password: PASSWORD })
+
+      expect(await session.getCurrentIdentity()).toEqual(signedIn.ok && signedIn.value)
     })
 
     it('rejects a wrong password', async () => {
@@ -106,21 +166,26 @@ export function authProviderContract(name: string, subject: ContractSubject) {
       })
     })
 
-    it('refuses to sign up an email that already has an account', async () => {
+    it('answers a password sign-up for an email that already has an account like a new one', async () => {
+      // Answering differently would tell anyone which emails have accounts.
       const email = newEmail('duplicate')
       await subject.seedUser(email, PASSWORD)
+      const session = subject.newSession()
 
-      const result = await subject
-        .newSession()
-        .signUpWithPassword({ email, password: PASSWORD, name: 'Again' })
-
-      expect(result).toEqual({
-        ok: false,
-        error: expect.objectContaining({
-          code: 'EXTERNAL_SERVICE_ERROR',
-          message: AUTH_ERROR_MESSAGES.signUpFailed,
-        }),
+      const result = await session.signUpWithPassword({
+        email,
+        password: 'other-password-1',
+        name: 'Again',
       })
+
+      expect(result).toEqual({ ok: true, value: { confirmationRequired: true } })
+      expect(await session.getCurrentIdentity()).toBeNull()
+      // The existing account is left as it was.
+      const original = await subject.newSession().signInWithPassword({ email, password: PASSWORD })
+      expect(original).toEqual({ ok: true, value: { userId: expect.any(String), email } })
+      expect(
+        await subject.newSession().signInWithPassword({ email, password: 'other-password-1' }),
+      ).toMatchObject({ ok: false, error: { code: 'UNAUTHENTICATED' } })
     })
 
     it('answers a sign-in code request for an unknown email like a known one, creating nothing', async () => {
@@ -228,52 +293,14 @@ export function authProviderContract(name: string, subject: ContractSubject) {
 
     it('treats emails as case-insensitive', async () => {
       const email = newEmail('case')
-      const signedUp = await subject
+      await subject.seedUser(email, PASSWORD)
+
+      const result = await subject
         .newSession()
-        .signUpWithPassword({ email: email.toUpperCase(), password: PASSWORD, name: 'Case' })
+        .signInWithPassword({ email: email.toUpperCase(), password: PASSWORD })
 
-      const result = await subject.newSession().signInWithPassword({ email, password: PASSWORD })
-
-      // Stored lowercased, and the same account either way.
-      expect(signedUp).toEqual({
-        ok: true,
-        value: { userId: expect.any(String), email },
-      })
-      expect(result).toEqual(signedUp)
-    })
-
-    it('replaces the password of the signed-in account', async () => {
-      const email = newEmail('replace-password')
-      await subject.seedUser(email, PASSWORD)
-      const session = subject.newSession()
-      await session.signInWithPassword({ email, password: PASSWORD })
-
-      const replaced = await session.replacePassword({ password: 'brand-new-password-1' })
-
-      expect(replaced).toEqual({ ok: true, value: undefined })
-      expect(
-        (await subject.newSession().signInWithPassword({ email, password: PASSWORD })).ok,
-      ).toBe(false)
-      expect(
-        (await subject.newSession().signInWithPassword({ email, password: 'brand-new-password-1' }))
-          .ok,
-      ).toBe(true)
-    })
-
-    it('names each signed-in session apart, and none once signed out', async () => {
-      const email = newEmail('session-id')
-      await subject.seedUser(email, PASSWORD)
-      const elsewhere = subject.newSession()
-      await elsewhere.signInWithPassword({ email, password: PASSWORD })
-      const here = subject.newSession()
-      await here.signInWithPassword({ email, password: PASSWORD })
-
-      const id = await here.currentSessionId()
-
-      expect(id).toEqual(expect.any(String))
-      expect(await elsewhere.currentSessionId()).not.toBe(id)
-      await here.signOut()
-      expect(await here.currentSessionId()).toBeNull()
+      // Stored lowercased, and found either way.
+      expect(result).toEqual({ ok: true, value: { userId: expect.any(String), email } })
     })
   })
 }

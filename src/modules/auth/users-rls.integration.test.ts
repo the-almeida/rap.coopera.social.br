@@ -10,6 +10,7 @@ import {
   createAnonSupabase,
   createTestUser,
   getAdminSupabase,
+  markPasswordVerified,
 } from '@/shared/db/test-helpers'
 
 // public.users through the public API with the anon key: what anyone who
@@ -26,6 +27,7 @@ async function signedInClient() {
   createdUserIds.push(seeded.id)
   const password = `pw-${randomUUID()}`
   await getAdminSupabase().auth.admin.updateUserById(seeded.id, { password })
+  await markPasswordVerified(seeded.id)
   const client = createAnonSupabase()
   const signIn = await client.auth.signInWithPassword({ email: seeded.email, password })
   if (signIn.error) throw signIn.error

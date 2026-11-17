@@ -1,10 +1,6 @@
 import { isAuthApiError, isAuthRetryableFetchError } from '@supabase/supabase-js'
 
-import {
-  ExternalServiceError,
-  UnauthenticatedError,
-  ValidationError,
-} from '@/shared/lib/errors/base'
+import { ExternalServiceError, UnauthenticatedError } from '@/shared/lib/errors/base'
 import { RateLimitExceededError } from '@/shared/lib/rate-limit'
 import { logger } from '@/shared/observability/logger'
 
@@ -17,13 +13,11 @@ export type SupabaseAuthOperation =
   | 'verify'
   | 'oauth'
   | 'sign-out'
-  | 'replace-password'
 
 // The failures each operation expects in normal traffic, by Supabase error
 // code (auth-js `AuthApiError.code`). Matching on codes, never on message
 // text, which Supabase may reword.
 type Cause = { cause: unknown }
-const NO_DETAILS = { formErrors: [], fieldErrors: {} }
 const EXPECTED: Record<SupabaseAuthOperation, Record<string, (cause: Cause) => AuthError>> = {
   'sign-in': {
     invalid_credentials: (cause) =>
@@ -32,19 +26,10 @@ const EXPECTED: Record<SupabaseAuthOperation, Record<string, (cause: Cause) => A
   verify: {
     otp_expired: (cause) => new UnauthenticatedError(AUTH_ERROR_MESSAGES.invalidCode, cause),
   },
-  'sign-up': {
-    user_already_exists: (cause) =>
-      new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.signUpFailed, cause),
-  },
+  'sign-up': {},
   'otp-request': {},
   oauth: {},
   'sign-out': {},
-  'replace-password': {
-    same_password: (cause) =>
-      new ValidationError(NO_DETAILS, AUTH_ERROR_MESSAGES.samePassword, cause),
-    weak_password: (cause) =>
-      new ValidationError(NO_DETAILS, AUTH_ERROR_MESSAGES.weakPassword, cause),
-  },
 }
 
 /**

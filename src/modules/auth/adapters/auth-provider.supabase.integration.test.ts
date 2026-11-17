@@ -6,6 +6,7 @@ import {
   cleanupAuthUser,
   cleanupMailpitFor,
   getAdminSupabase,
+  markPasswordVerified,
   pollMailpitForOtp,
 } from '@/shared/db/test-helpers'
 import { env } from '@/shared/lib/env'
@@ -56,14 +57,15 @@ async function newOAuthSession() {
 authProviderContract('Supabase, local stack', {
   newSession,
   newOAuthSession,
-  async seedUser(email, password) {
-    const { error } = await getAdminSupabase().auth.admin.createUser({
+  async seedUser(email, password, { passwordVerified = true } = {}) {
+    const { data, error } = await getAdminSupabase().auth.admin.createUser({
       email,
       password,
       email_confirm: true,
       user_metadata: { name: 'Contract seed' },
     })
-    if (error) throw error
+    if (error || !data.user) throw error ?? new Error('user not returned')
+    if (passwordVerified) await markPasswordVerified(data.user.id)
   },
   readOtp: pollMailpitForOtp,
   async accountExists(email) {

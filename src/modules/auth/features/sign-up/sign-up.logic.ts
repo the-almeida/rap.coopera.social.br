@@ -19,5 +19,7 @@ export async function signUpWith({ authProvider, ip }: PublicAuthContext, input:
   if (!result.ok) return result
 
   track(Events.USER_SIGNED_UP, { method: 'email' })
-  return ok(result.value)
+  // The emailed code confirms the account and verifies the password
+  // (verify-password). Same answer whether or not the email was new.
+  return ok({ status: 'verification-required' as const, email: input.email })
 }

@@ -88,6 +88,19 @@ export async function createTestUser({
 }
 
 /**
+ * Marks the account's password as proven together with its mailbox, as the
+ * verify-password step does. Seeds that stand in for an ordinary account
+ * with a password call it; without it, Supabase Auth refuses password-only
+ * sessions (public.custom_access_token_hook).
+ */
+export async function markPasswordVerified(userId: string): Promise<void> {
+  await db
+    .update(users)
+    .set({ passwordVerifiedAt: new Date() })
+    .where(eq(users.id, UserIdSchema.parse(userId)))
+}
+
+/**
  * Polls Mailpit for an email delivered to `recipient` and returns the
  * first 6-digit code found in the message body. Supabase OTP emails
  * embed the code in the plain-text version; the magic-link template

@@ -9,6 +9,7 @@ import {
   createAnonSupabase,
   createTestUser,
   getAdminSupabase,
+  markPasswordVerified,
 } from '@/shared/db/test-helpers'
 
 // What the public API (PostgREST, reachable with the public anon key) can
@@ -44,6 +45,7 @@ describe('public schema exposure', () => {
     createdUserIds.push(seeded.id)
     const password = `pw-${randomUUID()}`
     await getAdminSupabase().auth.admin.updateUserById(seeded.id, { password })
+    await markPasswordVerified(seeded.id)
     const client = createAnonSupabase()
     const signIn = await client.auth.signInWithPassword({ email: seeded.email, password })
     if (signIn.error) throw signIn.error
@@ -63,6 +65,39 @@ describe('public schema exposure', () => {
     const rows = await db.execute<{ relname: string }>(sql`
       SELECT c.relname FROM pg_class c
       WHERE c.relnamespace = 'public'::regnamespace AND c.relkind = 'r' AND NOT c.relrowsecurity
+    `)
+
+    expect(rows.map((row) => row.relname)).toEqual([])
+  })
+
+  it('lets the API roles call no function in the public schema', async () => {
+    // Every public function is an RPC endpoint for whoever may execute it, and
+    // most here are SECURITY DEFINER (they bypass RLS). The app and Supabase
+    // Auth call them with their own roles; the API roles must not.
+    const rows = await db.execute<{ fn: string; role: string }>(sql`
+      SELECT p.proname AS fn, r.role
+      FROM pg_proc p
+      CROSS JOIN (VALUES ('anon'), ('authenticated')) AS r(role)
+      WHERE p.pronamespace = 'public'::regnamespace
+        AND NOT EXISTS (SELECT 1 FROM pg_depend d WHERE d.objid = p.oid AND d.deptype = 'e')
+        AND has_function_privilege(r.role, p.oid, 'EXECUTE')
+      ORDER BY 1, 2
+    `)
+
+    expect(rows.map((row) => `${row.fn} (${row.role})`)).toEqual([])
+  })
+
+  it('has no view the API roles can read past RLS', async () => {
+    // A view applies the caller's RLS only with security_invoker; a
+    // materialized view never does.
+    const rows = await db.execute<{ relname: string }>(sql`
+      SELECT c.relname FROM pg_class c
+      WHERE c.relnamespace = 'public'::regnamespace
+        AND (
+          (c.relkind = 'v' AND NOT coalesce(c.reloptions @> ARRAY['security_invoker=true'], false))
+          OR c.relkind = 'm'
+        )
+        AND (has_table_privilege('anon', c.oid, 'SELECT') OR has_table_privilege('authenticated', c.oid, 'SELECT'))
     `)
 
     expect(rows.map((row) => row.relname)).toEqual([])

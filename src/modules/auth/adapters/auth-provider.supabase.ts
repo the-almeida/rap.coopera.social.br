@@ -1,13 +1,21 @@
-import type { SupabaseClient } from '@supabase/supabase-js'
+import { isAuthApiError, type SupabaseClient } from '@supabase/supabase-js'
 
-import { ExternalServiceError } from '@/shared/lib/errors/base'
+import { ExternalServiceError, PasswordVerificationRequiredError } from '@/shared/lib/errors/base'
 import { err, ok } from '@/shared/lib/result'
+import { logger } from '@/shared/observability/logger'
 
 import { AUTH_ERROR_MESSAGES, type AuthProvider } from '../ports/auth-provider'
 
 import { createSupabaseServerClient } from './supabase/server-client'
+import { createSupabaseStatelessClient } from './supabase/stateless-client'
 import { answersAsCodeSent, mapSupabaseAuthError } from './supabase-auth-errors'
 import { identityFromSupabaseUser } from './supabase-identity'
+
+// What public.custom_access_token_hook answers when it refuses a password-only
+// session for an unverified password. Supabase Auth relays the hook's message.
+const PASSWORD_VERIFICATION_REQUIRED = 'PASSWORD_VERIFICATION_REQUIRED'
+const isVerificationRequired = (error: { message?: string }) =>
+  Boolean(error.message?.includes(PASSWORD_VERIFICATION_REQUIRED))
 
 /**
  * The Supabase implementation of `AuthProvider`. `getClient` returns the
@@ -20,8 +28,20 @@ export function createSupabaseAuthProvider(getClient: () => Promise<SupabaseClie
     async signInWithPassword({ email, password }) {
       const supabase = await getClient()
       const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+      if (error && isVerificationRequired(error)) {
+        return err(new PasswordVerificationRequiredError(undefined, { cause: error }))
+      }
       if (error) return err(mapSupabaseAuthError('sign-in', error))
       return identityFromSupabaseUser(data.user)
+    },
+    async probePassword({ email, password }) {
+      // A throwaway client, so the caller's session cookies stay as they are.
+      const probe = createSupabaseStatelessClient()
+      const { error } = await probe.auth.signInWithPassword({ email, password })
+      if (error && isVerificationRequired(error)) return ok('unverified' as const)
+      if (error) return err(mapSupabaseAuthError('sign-in', error))
+      await probe.auth.signOut({ scope: 'local' })
+      return ok('verified' as const)
     },
     async signUpWithPassword({ email, password, name }) {
       const supabase = await getClient()
@@ -30,11 +50,23 @@ export function createSupabaseAuthProvider(getClient: () => Promise<SupabaseClie
         password,
         options: { data: { name } },
       })
+      // Supabase refuses an email that has a confirmed account; answered like
+      // a new one, so the sign-up page tells nobody who is registered.
+      if (error && isAuthApiError(error) && error.code === 'user_already_exists') {
+        return ok({ confirmationRequired: true as const })
+      }
       if (error) return err(mapSupabaseAuthError('sign-up', error))
-      if (!data.user) {
+      // With Confirm email on there is never a session here. One would mean
+      // the project accepts unconfirmed emails, which the app must not.
+      if (data.session) {
+        logger.error(
+          { source: 'supabase' },
+          'Password sign-up opened a session: Confirm email is off',
+        )
+        await supabase.auth.signOut({ scope: 'local' })
         return err(new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.unavailable))
       }
-      return identityFromSupabaseUser(data.user)
+      return ok({ confirmationRequired: true as const })
     },
     async requestSignInOtp({ email }) {
       const supabase = await getClient()
@@ -76,23 +108,6 @@ export function createSupabaseAuthProvider(getClient: () => Promise<SupabaseClie
       const { data, error } = await supabase.auth.exchangeCodeForSession(code)
       if (error) return err(mapSupabaseAuthError('oauth', error))
       return identityFromSupabaseUser(data.user)
-    },
-    async replacePassword({ password }) {
-      const supabase = await getClient()
-      const { error } = await supabase.auth.updateUser({ password })
-      if (error) return err(mapSupabaseAuthError('replace-password', error))
-      return ok(undefined)
-    },
-    async currentSessionId() {
-      const supabase = await getClient()
-      // Verifies the access token and reads its session_id claim.
-      try {
-        const { data } = await supabase.auth.getClaims()
-        const sessionId: unknown = data?.claims.session_id
-        return typeof sessionId === 'string' ? sessionId : null
-      } catch {
-        return null
-      }
     },
     async signOut() {
       const supabase = await getClient()

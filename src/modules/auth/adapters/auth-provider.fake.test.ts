@@ -9,8 +9,8 @@ const auth = createFakeAuth()
 authProviderContract('in-memory fake', {
   newSession: () => auth.newSession(),
   newOAuthSession: async () => auth.newSession(),
-  seedUser: async (email, password) => {
-    auth.addUser({ email, password })
+  seedUser: async (email, password, options) => {
+    auth.addUser({ email, password, ...options })
   },
   readOtp: async (email) => auth.lastCodeSentTo(email),
   cleanup: async () => {},

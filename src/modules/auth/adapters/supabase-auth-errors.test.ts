@@ -27,11 +27,6 @@ describe('mapSupabaseAuthError', () => {
       new AuthApiError('Token has expired or is invalid', 403, 'otp_expired'),
       as('UNAUTHENTICATED', AUTH_ERROR_MESSAGES.invalidCode),
     ],
-    [
-      'sign-up',
-      new AuthApiError('User already registered', 422, 'user_already_exists'),
-      as('EXTERNAL_SERVICE_ERROR', AUTH_ERROR_MESSAGES.signUpFailed),
-    ],
   ] as const)(
     '%s: maps the expected Supabase failure to a fixed message',
     (op, error, expected) => {

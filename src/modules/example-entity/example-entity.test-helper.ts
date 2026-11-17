@@ -16,7 +16,6 @@ function userFromRow(row: UserRow): User {
     name: row.name,
     role: row.role,
     pendingDeletion: null,
-    emailVerifiedAt: row.emailVerifiedAt,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   }

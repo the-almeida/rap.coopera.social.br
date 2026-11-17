@@ -9,6 +9,7 @@ import {
   cleanupAuthUser,
   createAnonSupabase,
   getAdminSupabase,
+  markPasswordVerified,
   uniqueTestEmail,
 } from '@/shared/db/test-helpers'
 import {
@@ -52,6 +53,7 @@ describe('account_deletion_requests RLS', () => {
     expect(error).toBeNull()
     if (!data.user) throw new Error('user not returned')
     createdUserIds.push(data.user.id)
+    await markPasswordVerified(data.user.id)
 
     const anon = createAnonSupabase()
     const signIn = await anon.auth.signInWithPassword({ email, password })

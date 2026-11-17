@@ -10,6 +10,7 @@ import {
   createAnonSupabase,
   createTestUser,
   getAdminSupabase,
+  markPasswordVerified,
   uniqueTestEmail,
 } from '@/shared/db/test-helpers'
 import type { UserId } from '@/shared/lib/ids'
@@ -44,16 +45,18 @@ describe('public.users sync from auth.users updates', () => {
     expect(await row(user.id)).toMatchObject({ email: newEmail })
   })
 
-  it('forgets the verification when the email changes: the new address is unproven', async () => {
+  it('keeps the password verification when the email changes', async () => {
     const user = await seeded()
-    await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, user.id))
+    await markPasswordVerified(user.id)
+    const verifiedAt = (await row(user.id))?.passwordVerifiedAt
 
     await getAdminSupabase().auth.admin.updateUserById(user.id, {
       email: uniqueTestEmail('sync-new'),
       email_confirm: true,
     })
 
-    expect(await row(user.id)).toMatchObject({ emailVerifiedAt: null })
+    expect((await row(user.id))?.passwordVerifiedAt).toEqual(verifiedAt)
+    expect(verifiedAt).toBeInstanceOf(Date)
   })
 
   it('does not copy user metadata, which users can edit themselves', async () => {
@@ -70,6 +73,7 @@ describe('public.users sync from auth.users updates', () => {
     const user = await seeded()
     const password = `pw-${randomUUID()}`
     await getAdminSupabase().auth.admin.updateUserById(user.id, { password })
+    await markPasswordVerified(user.id)
     const before = await row(user.id)
 
     const { error } = await createAnonSupabase().auth.signInWithPassword({

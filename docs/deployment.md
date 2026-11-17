@@ -132,14 +132,17 @@ All settings are in Supabase Dashboard → Authentication.
    _If skipped:_ Supabase only redirects to allow-listed URLs, so email links and OAuth returns go to `localhost:3000` or fail.
 2. **Email templates.** Paste `supabase/templates/confirmation.html` into _Confirm signup_ and `supabase/templates/magic_link.html` into _Magic Link_.
    _If skipped:_ sign-up and sign-in ask for a 6-digit code (`{{ .Token }}`), but the default templates only contain a link, so users get an email with no code to type.
-3. **Confirm email** (Sign In / Providers → Email). Turn it **off**, matching local (`enable_confirmations = false`). The cloud default is on.
-   _If skipped:_ password sign-up creates the user without a session, so the redirect to `/dashboard` bounces back to `/sign-in` with no explanation.
-   _Trade-off:_ password sign-up accepts unverified emails. OTP sign-up is unaffected, since entering the code verifies the email.
+3. **Confirm email** (Sign In / Providers → Email). Keep it **on** (the cloud default), matching local (`enable_confirmations = true`). Keep **Secure email change** on too.
+   _If skipped:_ anyone could register someone else's address with a password of their own. The app refuses to continue a password sign-up that opens a session, so sign-up fails instead.
+   **Access token hook** (Hooks → Customize Access Token (JWT) Claims → Postgres → `public.custom_access_token_hook`). Enable it after `supabase db push` has created the function.
+   _If skipped:_ password-only sessions are no longer refused while the password is unverified, so a password nobody proved with the mailbox signs in.
 4. **Anonymous sign-ins** (Sign In / Providers → "Allow anonymous sign-ins"). Keep it **off** (the default): the app has no accounts without credentials.
    _If skipped:_ the build fails (`pnpm check:oauth-providers`), since anyone with the anon key could create such an account.
-5. **Rate limits.** Raise "emails sent per hour" (30 by default with custom SMTP) to fit expected traffic.
-   _If skipped:_ every sign-up or sign-in email after the 30th in an hour fails.
-6. **Smoke test.** On the production URL, create an account with a real address, receive the code, and finish sign-up. Then sign out and sign in with an emailed code. This validates SMTP, templates, and URL configuration together.
+5. **Rate limits.** Raise "emails sent per hour" (30 by default with custom SMTP) to fit expected traffic. Also raise the sign-up/sign-in and token verification limits: Supabase counts them per IP, and every call comes from the app's server, so all users share one budget. A password sign-up now takes three calls (sign-up, code, password check), and the first password sign-in of an older account four.
+   _If skipped:_ every sign-up or sign-in email after the 30th in an hour fails, and busy minutes answer "too many attempts" for everyone.
+6. **Smoke test.** On the production URL, create an account with a real address, receive the code, and finish sign-up. Then sign out and sign in with the password alone, and once more with an emailed code. This validates SMTP, templates, URL configuration and the access token hook together.
+
+**Upgrading a project that ran an earlier version** (Confirm email off, no hook): turn Confirm email on and enable the access token hook in the same release as the migrations, before the new app takes traffic. The hook only works once `supabase db push` has created its function, and a hook enabled without its function stops Supabase from issuing any token. Every password stays unverified at first: sessions opened with a password end at their next refresh (within an hour), and each person confirms once with an emailed code at their next password sign-in.
 
 ## 7. OAuth providers (optional)
 

@@ -6,19 +6,72 @@ import { expect, test } from '../fixtures/auth'
 test.describe.configure({ mode: 'serial' })
 
 test.describe('password sign-up', () => {
-  test('user can create an account and lands on the dashboard', async ({ page, uniqueEmail }) => {
+  test('user confirms the emailed code, lands on the dashboard, then signs in with the password alone', async ({
+    page,
+    uniqueEmail,
+    pollOtp,
+  }) => {
     const email = uniqueEmail('signup')
     const name = 'Eve Newuser'
+    const password = 'strong-password-123'
 
     await page.goto('/sign-up')
     await page.getByLabel('Name').fill(name)
     await page.getByLabel('Email').fill(email)
-    await page.getByLabel('Password').fill('strong-password-123')
+    await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Create account' }).click()
+    await page.getByLabel('6-digit code').fill(await pollOtp(email))
+    await page.getByRole('button', { name: 'Verify' }).click()
 
     await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
     await expect(page.getByText(email)).toBeVisible()
     await expect(page.getByText(`(${name})`)).toBeVisible()
+
+    await page.getByRole('button', { name: 'Sign out' }).click()
+    await expect(page).toHaveURL(/\/sign-in/)
+    await page.getByLabel('Email').fill(email)
+    await page.getByLabel('Password').fill(password)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  })
+})
+
+test.describe('password not yet verified', () => {
+  test('confirms once with an emailed code, then the password alone works', async ({
+    page,
+    seedUser,
+    pollOtp,
+  }) => {
+    const user = await seedUser({ passwordVerified: false })
+
+    await page.goto('/sign-in')
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByLabel('Password').fill(user.password)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(page.getByText("For your security, confirm it's you.")).toBeVisible()
+    await page.getByLabel('6-digit code').fill(await pollOtp(user.email))
+    await page.getByRole('button', { name: 'Verify' }).click()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+
+    await page.getByRole('button', { name: 'Sign out' }).click()
+    await expect(page).toHaveURL(/\/sign-in/)
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByLabel('Password').fill(user.password)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(page.getByRole('heading', { name: 'Dashboard' })).toBeVisible()
+  })
+
+  test('knowing the password without the mailbox opens no session', async ({ page, seedUser }) => {
+    const user = await seedUser({ passwordVerified: false })
+
+    await page.goto('/sign-in')
+    await page.getByLabel('Email').fill(user.email)
+    await page.getByLabel('Password').fill(user.password)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+    await expect(page.getByLabel('6-digit code')).toBeVisible()
+
+    await page.goto('/dashboard')
+    await expect(page).toHaveURL(/\/sign-in/)
   })
 })
 

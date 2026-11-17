@@ -12,15 +12,10 @@ export const users = pgTable(
     email: text('email').notNull(),
     name: text('name').notNull(),
     role: userRole('role').notNull().default('user'),
-    // When the person proved control of the email (an emailed code or an
-    // OAuth sign-in). Null: not known to be verified, for example an account
-    // created with a password while Confirm email is off. Set by the app,
-    // not copied from auth.users.email_confirmed_at (autoconfirm sets that).
-    emailVerifiedAt: timestamp('email_verified_at', { withTimezone: true }),
-    // Until when Supabase Auth may not change the account or open a session
-    // for it: set by the first proof of the email, so writes that were already
-    // on their way (from sessions it ended) cannot land after it.
-    authLockedUntil: timestamp('auth_locked_until', { withTimezone: true }),
+    // When the person proved, in one go, the password and the mailbox (an
+    // emailed code). Null: never proven, so Supabase Auth refuses
+    // password-only sessions (public.custom_access_token_hook).
+    passwordVerifiedAt: timestamp('password_verified_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

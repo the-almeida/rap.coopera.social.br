@@ -1,3 +1,4 @@
+import { PasswordVerificationRequiredError } from '@/shared/lib/errors/base'
 import { ok } from '@/shared/lib/result'
 import { Events } from '@/shared/observability/analytics/events'
 import { track } from '@/shared/observability/analytics/track'
@@ -17,6 +18,13 @@ export async function signInWith({ authProvider, ip }: PublicAuthContext, input:
   if (!limited.ok) return limited
 
   const result = await authProvider.signInWithPassword(input)
+  if (!result.ok && result.error instanceof PasswordVerificationRequiredError) {
+    // The password is right but was never proven with the mailbox: email a
+    // code, and the form goes on with verify-password.
+    const sent = await authProvider.requestSignInOtp({ email: input.email })
+    if (!sent.ok) return sent
+    return ok({ status: 'verification-required' as const, email: input.email })
+  }
   if (!result.ok) return result
 
   const user = await userRepository.findById(result.value.userId)
@@ -29,5 +37,5 @@ export async function signInWith({ authProvider, ip }: PublicAuthContext, input:
   }
 
   track(Events.USER_SIGNED_IN, { method: 'email' })
-  return ok(user)
+  return ok({ status: 'signed-in' as const, user })
 }

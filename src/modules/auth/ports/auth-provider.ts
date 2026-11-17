@@ -1,6 +1,7 @@
 import type {
   ConflictError,
   ExternalServiceError,
+  PasswordVerificationRequiredError,
   UnauthenticatedError,
   ValidationError,
 } from '@/shared/lib/errors/base'
@@ -14,6 +15,13 @@ export type AuthIdentity = {
   userId: UserId
   email: string
 }
+
+/**
+ * A checked password: `verified` when it was proven with the mailbox,
+ * `unverified` when it is right but Supabase Auth still refuses a
+ * password-only session for it.
+ */
+export type PasswordCheck = 'verified' | 'unverified'
 
 export type AuthError =
   | ConflictError
@@ -31,24 +39,39 @@ export type AuthError =
 export const AUTH_ERROR_MESSAGES = {
   invalidCredentials: 'Invalid email or password.',
   invalidCode: 'Invalid or expired code.',
-  signUpFailed: 'Could not create the account. If you already have one, sign in.',
   tooManyAttempts: 'Too many attempts. Wait a minute and try again.',
   unavailable: 'Sign-in is unavailable right now. Try again.',
   emailUnavailable: 'This email cannot be used. If it is yours, sign in with it instead.',
-  samePassword: 'Choose a password different from the current one.',
-  weakPassword: 'Choose a longer password.',
 } as const
 
 export type AuthProvider = {
+  /**
+   * `PasswordVerificationRequiredError` when the password is right but was
+   * never proven together with the mailbox; a wrong password is
+   * `UnauthenticatedError` either way, so nothing tells the two apart.
+   */
   signInWithPassword(input: {
     email: string
     password: string
-  }): Promise<Result<AuthIdentity, AuthError>>
+  }): Promise<Result<AuthIdentity, AuthError | PasswordVerificationRequiredError>>
+  /**
+   * Opens no session (Confirm email is on): emails a 6-digit code that
+   * confirms the account. An email that already has an account gets the
+   * same answer and no email, so the answer tells nobody who is registered.
+   */
   signUpWithPassword(input: {
     email: string
     password: string
     name: string
-  }): Promise<Result<AuthIdentity, AuthError>>
+  }): Promise<Result<{ confirmationRequired: true }, AuthError>>
+  /**
+   * Checks email and password without touching this session (nothing is
+   * signed in or out). A wrong password is `UnauthenticatedError`.
+   */
+  probePassword(input: {
+    email: string
+    password: string
+  }): Promise<Result<PasswordCheck, AuthError>>
   /**
    * Sends a 6-digit code to an EXISTING user, and never creates an account
    * (`shouldCreateUser: false`). An unknown email answers `ok` like a known
@@ -68,10 +91,6 @@ export type AuthProvider = {
    * app's callback for a session, and returns who signed in.
    */
   exchangeOAuthCode(code: string): Promise<Result<AuthIdentity, AuthError>>
-  /** Sets a new password for the signed-in account. */
-  replacePassword(input: { password: string }): Promise<Result<void, AuthError>>
-  /** The id of this session (auth.sessions.id), or null when signed out. */
-  currentSessionId(): Promise<string | null>
   signOut(): Promise<Result<void, AuthError>>
   getCurrentIdentity(): Promise<AuthIdentity | null>
 }

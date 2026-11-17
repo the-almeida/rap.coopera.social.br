@@ -1,15 +1,10 @@
 import { randomUUID } from 'node:crypto'
 
-import { eq, sql } from 'drizzle-orm'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { db } from '@/shared/db/client'
-import { users } from '@/shared/db/schema/auth'
 import { cleanupAuthUser, createTestUser } from '@/shared/db/test-helpers'
-import type { UserId } from '@/shared/lib/ids'
 
 import { createFakeAuth } from '../adapters/auth-provider.fake.test-helper'
-import { userRepository } from '../adapters/user-repository.drizzle'
 import type { AuthProvider } from '../ports/auth-provider'
 
 import { requestSignInOtpWith } from './request-sign-in-otp/request-sign-in-otp.logic'
@@ -90,8 +85,29 @@ describe('public auth actions', () => {
 
     expect(result).toEqual({
       ok: true,
-      value: expect.objectContaining({ id: seeded.id, name: seeded.name, pendingDeletion: null }),
+      value: {
+        status: 'signed-in',
+        user: expect.objectContaining({ id: seeded.id, name: seeded.name, pendingDeletion: null }),
+      },
     })
+  })
+
+  it('emails a code and asks for it when the password is right but was never verified', async () => {
+    const seeded = await createTestUser({ prefix: 'sign-in-unverified' })
+    createdUserIds.push(seeded.id)
+    auth.addUser({
+      userId: seeded.id,
+      email: seeded.email,
+      password: PASSWORD,
+      passwordVerified: false,
+    })
+    const result = await signInWith(deps(), { email: seeded.email, password: PASSWORD })
+
+    expect(result).toEqual({
+      ok: true,
+      value: { status: 'verification-required', email: seeded.email },
+    })
+    expect(auth.lastCodeSentTo(seeded.email)).toMatch(/^\d{6}$/)
   })
 
   it('treats a signed-in account without a profile row as a bug, not a user error', async () => {
@@ -106,110 +122,22 @@ describe('public auth actions', () => {
     )
   })
 
-  it('signs up and returns the new identity', async () => {
+  it('signs up without a session and asks for the code it emailed', async () => {
     const email = uniqueEmail('sign-up')
-
     const result = await signUpWith(deps(), { email, password: PASSWORD, name: 'New' })
 
-    expect(result).toEqual({
-      ok: true,
-      value: { userId: expect.any(String), email },
-    })
+    expect(result).toEqual({ ok: true, value: { status: 'verification-required', email } })
+    expect(auth.lastCodeSentTo(email)).toMatch(/^\d{6}$/)
   })
 
-  describe('verifying a code records that the email is verified', () => {
-    async function seededWithCode() {
-      const seeded = await createTestUser({ prefix: 'verify' })
-      createdUserIds.push(seeded.id)
-      auth.addUser({ userId: seeded.id, email: seeded.email, password: PASSWORD })
-      await requestSignInOtpWith(deps(), { email: seeded.email })
-      return { ...seeded, code: auth.lastCodeSentTo(seeded.email) }
-    }
-    const verifiedAt = async (id: UserId) => (await userRepository.findById(id))?.emailVerifiedAt
-
-    it('sets it on the right code, and a wrong code changes nothing', async () => {
-      const user = await seededWithCode()
-      const wrong = user.code === '000000' ? '111111' : '000000'
-
-      const refused = await verifyOtpWith(deps(), { email: user.email, token: wrong })
-      expect(refused).toEqual({
-        ok: false,
-        error: expect.objectContaining({ code: 'UNAUTHENTICATED' }),
-      })
-      expect(await verifiedAt(user.id)).toBeNull()
-
-      const before = Date.now()
-      const result = await verifyOtpWith(deps(), { email: user.email, token: user.code })
-
-      expect(result.ok).toBe(true)
-      expect((await verifiedAt(user.id))?.getTime()).toBeGreaterThanOrEqual(before - 1_000)
-    })
-
-    it("does not mark an email the person did not prove (the account's email changed)", async () => {
-      const user = await seededWithCode()
-      // The account's email is now another address; the code proves the old one.
-      await db
-        .update(users)
-        .set({ email: uniqueEmail('changed') })
-        .where(eq(users.id, user.id))
-
-      const result = await verifyOtpWith(deps(), { email: user.email, token: user.code })
-
-      expect(result.ok).toBe(true)
-      expect(await verifiedAt(user.id)).toBeNull()
-    })
-
-    it('matches the proven email regardless of case', async () => {
-      const user = await seededWithCode()
-      await db.update(users).set({ email: user.email.toUpperCase() }).where(eq(users.id, user.id))
-
-      const result = await verifyOtpWith(deps(), { email: user.email, token: user.code })
-
-      expect(result.ok).toBe(true)
-      expect(await verifiedAt(user.id)).toBeInstanceOf(Date)
-    })
-
-    it('keeps the first verification time on later verifications', async () => {
-      const user = await seededWithCode()
-      const first = new Date('2026-01-01T00:00:00Z')
-      await db.update(users).set({ emailVerifiedAt: first }).where(eq(users.id, user.id))
-
-      const result = await verifyOtpWith(deps(), { email: user.email, token: user.code })
-
-      expect(result.ok).toBe(true)
-      expect(await verifiedAt(user.id)).toEqual(first)
-    })
-  })
-
-  it('completes an OAuth sign-in and records the email as verified by the provider', async () => {
+  it('completes an OAuth sign-in and returns who signed in', async () => {
     const seeded = await createTestUser({ prefix: 'oauth' })
     createdUserIds.push(seeded.id)
     auth.addUser({ userId: seeded.id, email: seeded.email, password: PASSWORD })
-    const before = Date.now()
 
     const result = await completeOAuthSignInWith(deps(), auth.issueOAuthCode(seeded.email))
 
-    expect(result).toEqual({
-      ok: true,
-      value: { userId: seeded.id, email: seeded.email, mustSetPassword: false },
-    })
-    const user = await userRepository.findById(seeded.id)
-    expect(user?.emailVerifiedAt?.getTime()).toBeGreaterThanOrEqual(before - 1_000)
-  })
-
-  it("does not verify the account's email through OAuth when the provider vouched for another", async () => {
-    const seeded = await createTestUser({ prefix: 'oauth-changed' })
-    createdUserIds.push(seeded.id)
-    auth.addUser({ userId: seeded.id, email: seeded.email, password: PASSWORD })
-    await db
-      .update(users)
-      .set({ email: uniqueEmail('changed') })
-      .where(eq(users.id, seeded.id))
-
-    const result = await completeOAuthSignInWith(deps(), auth.issueOAuthCode(seeded.email))
-
-    expect(result.ok).toBe(true)
-    expect((await userRepository.findById(seeded.id))?.emailVerifiedAt).toBeNull()
+    expect(result).toEqual({ ok: true, value: { userId: seeded.id, email: seeded.email } })
   })
 
   it('sends a sign-up code to the email', async () => {
@@ -239,15 +167,6 @@ describe('public auth actions', () => {
         return signInWith(deps(), { email, password: 'wrong-password-1' })
       },
       code: 'UNAUTHENTICATED',
-    },
-    {
-      name: 'sign-up of a registered email',
-      run: async () => {
-        const email = uniqueEmail('taken')
-        auth.addUser({ email, password: PASSWORD })
-        return signUpWith(deps(), { email, password: PASSWORD, name: 'Again' })
-      },
-      code: 'EXTERNAL_SERVICE_ERROR',
     },
     {
       name: 'verify with a wrong code',
@@ -310,86 +229,5 @@ describe('public auth actions', () => {
     }
 
     expect(await signInWith(deps(), { email, password: PASSWORD })).toEqual(rateLimited)
-  })
-})
-
-// Mitigation for accounts whose password may have been set by someone who
-// never owned the email (Confirm email is off): on the first proof of the
-// email, whoever proved it keeps the account. These tests check that both
-// sign-ins that prove an email run it; what it does to real passwords and
-// sessions is tested against Supabase in email-proof.integration.test.ts.
-describe('first proof of an unverified email', () => {
-  // An unverified account (public.users row, read by the rule), also known
-  // to the fake so it can sign in. `ageMinutes` backdates it: a prompt for a
-  // new password only makes sense for an account that existed before this
-  // sign-in.
-  async function unverifiedAccount({ ageMinutes }: { ageMinutes: number }) {
-    const seeded = await createTestUser({ prefix: 'first-proof' })
-    createdUserIds.push(seeded.id)
-    await db
-      .update(users)
-      .set({ createdAt: new Date(Date.now() - ageMinutes * 60_000) })
-      .where(eq(users.id, seeded.id))
-    auth.addUser({ userId: seeded.id, email: seeded.email, password: PASSWORD })
-    return seeded
-  }
-
-  async function verifyWithCode(email: string) {
-    await requestSignInOtpWith(deps(), { email })
-    return verifyOtpWith(deps(), { email, token: auth.lastCodeSentTo(email) })
-  }
-
-  // The account's password in Supabase Auth, replaced by the mitigation.
-  async function passwordHash(id: UserId) {
-    const rows = await db.execute<{ hash: string | null }>(
-      sql`SELECT encrypted_password AS hash FROM auth.users WHERE id = ${id}`,
-    )
-    return rows[0]?.hash
-  }
-
-  it('secures the account and asks for a new password', async () => {
-    const account = await unverifiedAccount({ ageMinutes: 60 })
-    const before = await passwordHash(account.id)
-
-    const result = await verifyWithCode(account.email)
-
-    expect(result).toEqual({
-      ok: true,
-      value: expect.objectContaining({ userId: account.id, mustSetPassword: true }),
-    })
-    expect(await passwordHash(account.id)).not.toBe(before)
-    expect((await userRepository.findById(account.id))?.emailVerifiedAt).toBeInstanceOf(Date)
-  })
-
-  it('leaves an already verified account alone', async () => {
-    const account = await unverifiedAccount({ ageMinutes: 60 })
-    await db.update(users).set({ emailVerifiedAt: new Date() }).where(eq(users.id, account.id))
-    const before = await passwordHash(account.id)
-
-    const result = await verifyWithCode(account.email)
-
-    expect(result).toMatchObject({ ok: true, value: { mustSetPassword: false } })
-    expect(await passwordHash(account.id)).toBe(before)
-  })
-
-  it('secures an account created moments ago too, without asking for a password', async () => {
-    // A code or OAuth sign-up: the account is born in this same sign-in.
-    const account = await unverifiedAccount({ ageMinutes: 0 })
-    const before = await passwordHash(account.id)
-
-    const result = await verifyWithCode(account.email)
-
-    expect(result).toMatchObject({ ok: true, value: { mustSetPassword: false } })
-    expect(await passwordHash(account.id)).not.toBe(before)
-  })
-
-  it('does the same on the first OAuth sign-in to that email', async () => {
-    const account = await unverifiedAccount({ ageMinutes: 60 })
-    const before = await passwordHash(account.id)
-
-    const result = await completeOAuthSignInWith(deps(), auth.issueOAuthCode(account.email))
-
-    expect(result).toMatchObject({ ok: true, value: { mustSetPassword: true } })
-    expect(await passwordHash(account.id)).not.toBe(before)
   })
 })

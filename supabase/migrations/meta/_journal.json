@@ -43,6 +43,20 @@
       "when": 1794932607289,
       "tag": "20261117162327_drop_anonymous_account_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1794934015752,
+      "tag": "20261117164655_add_users_password_verified_at",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794949900500,
+      "tag": "20261117211140_drop_email_proof_columns",
+      "breakpoints": true
     }
   ]
 }

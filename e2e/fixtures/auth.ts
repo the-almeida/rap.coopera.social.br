@@ -38,8 +38,14 @@ export type SeededUser = {
 }
 
 type AuthFixtures = {
+  /**
+   * A confirmed account. Its password counts as verified (proven with the
+   * mailbox) unless `passwordVerified: false`.
+   */
   seedUser: (
-    overrides?: Partial<Pick<SeededUser, 'email' | 'password' | 'name'>>,
+    overrides?: Partial<Pick<SeededUser, 'email' | 'password' | 'name'>> & {
+      passwordVerified?: boolean
+    },
   ) => Promise<SeededUser>
   pollOtp: (recipient: string) => Promise<string>
   uniqueEmail: (prefix?: string) => string
@@ -103,6 +109,15 @@ export const test = base.extend<AuthFixtures>({
       })
       if (error) throw new Error(`seedUser: ${error.message}`)
       if (!data.user) throw new Error('seedUser: no user returned')
+      // An ordinary account: its password was proven with the mailbox, so
+      // Supabase Auth lets it sign in with the password alone.
+      if (overrides?.passwordVerified !== false) {
+        const verified = await admin
+          .from('users')
+          .update({ password_verified_at: new Date().toISOString() })
+          .eq('id', data.user.id)
+        if (verified.error) throw new Error(`seedUser: ${verified.error.message}`)
+      }
 
       user.id = data.user.id
       created.push(user.id)

@@ -13,7 +13,9 @@ import { AuthDivider } from '../_components/auth-divider'
 import { OAuthButtons } from '../_components/oauth-buttons'
 import { OtpVerifyForm } from '../_components/otp-verify-form'
 
-type Stage = { kind: 'choose' } | { kind: 'awaiting-code'; email: string }
+type Stage =
+  | { kind: 'choose' }
+  | { kind: 'awaiting-code'; email: string; password?: string; intro?: string }
 
 type Props = {
   /** Active OAuth providers, decided on the server from the environment. */
@@ -51,6 +53,8 @@ export function SignInForm({ oauthProviders }: Props) {
       <OtpVerifyForm
         flow="sign-in"
         email={stage.email}
+        password={stage.password}
+        intro={stage.intro}
         onBack={() => setStage({ kind: 'choose' })}
       />
     )
@@ -81,6 +85,15 @@ export function SignInForm({ oauthProviders }: Props) {
             const result = await signIn({ email, password })
             if (!result.ok) {
               setError(result.error.message)
+              return
+            }
+            if (result.value.status === 'verification-required') {
+              setStage({
+                kind: 'awaiting-code',
+                email: result.value.email,
+                password,
+                intro: "For your security, confirm it's you. You only need to do this once.",
+              })
               return
             }
             router.push('/dashboard')

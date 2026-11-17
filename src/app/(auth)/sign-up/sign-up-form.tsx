@@ -1,6 +1,5 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
 import { useState, useTransition } from 'react'
 
 import { Button } from '@/shared/ui/button'
@@ -13,7 +12,9 @@ import { AuthDivider } from '../_components/auth-divider'
 import { OAuthButtons } from '../_components/oauth-buttons'
 import { OtpVerifyForm } from '../_components/otp-verify-form'
 
-type Stage = { kind: 'choose' } | { kind: 'awaiting-code'; email: string }
+type Stage =
+  | { kind: 'choose' }
+  | { kind: 'awaiting-code'; email: string; password?: string; intro?: string }
 
 type Props = {
   /** Active OAuth providers, decided on the server from the environment. */
@@ -21,7 +22,6 @@ type Props = {
 }
 
 export function SignUpForm({ oauthProviders }: Props) {
-  const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [stage, setStage] = useState<Stage>({ kind: 'choose' })
@@ -51,6 +51,8 @@ export function SignUpForm({ oauthProviders }: Props) {
       <OtpVerifyForm
         flow="sign-up"
         email={stage.email}
+        password={stage.password}
+        intro={stage.intro}
         onBack={() => setStage({ kind: 'choose' })}
       />
     )
@@ -84,8 +86,7 @@ export function SignUpForm({ oauthProviders }: Props) {
               setError(result.error.message)
               return
             }
-            router.push('/dashboard')
-            router.refresh()
+            setStage({ kind: 'awaiting-code', email: result.value.email, password })
           })
         }}
       >

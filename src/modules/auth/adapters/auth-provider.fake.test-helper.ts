@@ -2,8 +2,8 @@ import { randomInt, randomUUID } from 'node:crypto'
 
 import {
   ExternalServiceError,
+  PasswordVerificationRequiredError,
   UnauthenticatedError,
-  ValidationError,
 } from '@/shared/lib/errors/base'
 import { UserIdSchema, type UserId } from '@/shared/lib/ids'
 import { err, ok } from '@/shared/lib/result'
@@ -27,7 +27,15 @@ export function createFakeAuth() {
     throw new Error('The fake auth provider is for tests only; it signs anyone in.')
   }
 
-  type Account = { identity: AuthIdentity; password: string | null }
+  // `confirmed`: the email was confirmed (Confirm email is on).
+  // `passwordVerified`: what public.users.password_verified_at holds for
+  // Supabase; without it, password-only sessions are refused.
+  type Account = {
+    identity: AuthIdentity
+    password: string | null
+    confirmed: boolean
+    passwordVerified: boolean
+  }
   // By id, and by email.
   const accounts = new Map<UserId, Account>()
   const byEmail = new Map<string, UserId>()
@@ -42,10 +50,20 @@ export function createFakeAuth() {
     return id ? accounts.get(id) : undefined
   }
 
-  function createAccount(email: string, password: string | null, userId?: UserId): Account {
+  function createAccount(
+    email: string,
+    password: string | null,
+    {
+      userId,
+      confirmed = true,
+      passwordVerified = true,
+    }: Partial<Account> & { userId?: UserId } = {},
+  ): Account {
     const account: Account = {
       identity: { userId: userId ?? UserIdSchema.parse(randomUUID()), email: key(email) },
       password,
+      confirmed,
+      passwordVerified,
     }
     accounts.set(account.identity.userId, account)
     byEmail.set(key(email), account.identity.userId)
@@ -58,7 +76,6 @@ export function createFakeAuth() {
 
   function newSession(): AuthProvider & { signInAs(account: Account): void } {
     const token = Symbol('session')
-    const sessionId = randomUUID()
     let currentId: UserId | null = null
 
     const current = () => {
@@ -79,16 +96,30 @@ export function createFakeAuth() {
         if (!account || account.password !== password) {
           return err(new UnauthenticatedError(AUTH_ERROR_MESSAGES.invalidCredentials))
         }
+        if (!account.confirmed) {
+          return err(new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.unavailable))
+        }
+        if (!account.passwordVerified) return err(new PasswordVerificationRequiredError())
         signInAs(account)
         return ok(account.identity)
       },
-      async signUpWithPassword({ email, password }) {
-        if (findByEmail(email)) {
-          return err(new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.signUpFailed))
+      async probePassword({ email, password }) {
+        const account = findByEmail(email)
+        if (!account || account.password !== password) {
+          return err(new UnauthenticatedError(AUTH_ERROR_MESSAGES.invalidCredentials))
         }
-        const account = createAccount(email, password)
-        signInAs(account)
-        return ok(account.identity)
+        if (!account.confirmed) {
+          return err(new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.unavailable))
+        }
+        return ok(account.passwordVerified ? ('verified' as const) : ('unverified' as const))
+      },
+      async signUpWithPassword({ email, password }) {
+        // An existing email gets the same answer and no email.
+        if (!findByEmail(email)) {
+          createAccount(email, password, { confirmed: false, passwordVerified: false })
+          sendCode(email)
+        }
+        return ok({ confirmationRequired: true as const })
       },
       async requestSignInOtp({ email }) {
         // Same answer either way; only real accounts get a code.
@@ -98,7 +129,7 @@ export function createFakeAuth() {
       async requestSignUpOtp({ email }) {
         // Like Supabase with shouldCreateUser: the account exists from
         // the request on; the code confirms it.
-        if (!findByEmail(email)) createAccount(email, null)
+        if (!findByEmail(email)) createAccount(email, null, { confirmed: false })
         sendCode(email)
         return ok(undefined)
       },
@@ -108,6 +139,7 @@ export function createFakeAuth() {
           return err(new UnauthenticatedError(AUTH_ERROR_MESSAGES.invalidCode))
         }
         codes.delete(key(email))
+        account.confirmed = true
         signInAs(account)
         return ok(account.identity)
       },
@@ -120,23 +152,6 @@ export function createFakeAuth() {
         oauthCodes.delete(code)
         signInAs(account)
         return ok(account.identity)
-      },
-      async replacePassword({ password }) {
-        const account = current()
-        if (!account) return err(new UnauthenticatedError(AUTH_ERROR_MESSAGES.unavailable))
-        if (account.password === password) {
-          return err(
-            new ValidationError(
-              { formErrors: [], fieldErrors: {} },
-              AUTH_ERROR_MESSAGES.samePassword,
-            ),
-          )
-        }
-        account.password = password
-        return ok(undefined)
-      },
-      async currentSessionId() {
-        return current() ? sessionId : null
       },
       async signOut() {
         if (currentId) sessions.get(currentId)?.delete(token)
@@ -160,12 +175,21 @@ export function createFakeAuth() {
       email,
       password,
       userId,
+      passwordVerified = true,
     }: {
       email: string
       password: string
       userId?: UserId
+      passwordVerified?: boolean
     }): AuthIdentity {
-      return createAccount(email, password, userId).identity
+      return createAccount(email, password, { userId, passwordVerified }).identity
+    },
+
+    /** Setup only: what verify-password records in public.users for Supabase. */
+    markPasswordVerified(email: string): void {
+      const account = findByEmail(email)
+      if (!account) throw new Error(`no account for ${email}`)
+      account.passwordVerified = true
     },
 
     /**

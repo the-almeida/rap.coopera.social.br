@@ -1,6 +1,5 @@
 import { ok } from '@/shared/lib/result'
 
-import { secureFirstEmailProof } from '../email-proof'
 import type { PublicAuthContext } from '../public-auth-context'
 import { limitPublicAuthCall } from '../public-auth-rate-limits'
 
@@ -26,9 +25,5 @@ export async function verifyOtpWith(
   const result = await authProvider.verifyOtp({ email: input.email, token: input.token })
   if (!result.ok) return result
 
-  // Entering the emailed code proves the email, including for an account
-  // that was created with a password.
-  const proof = await secureFirstEmailProof(authProvider, result.value.userId, input.email)
-  if (!proof.ok) return proof
-  return ok({ ...result.value, ...proof.value })
+  return ok(result.value)
 }

@@ -77,6 +77,21 @@ export class AccountPendingDeletionError extends AppError {
   }
 }
 
+/**
+ * The password is right, but it was never proven together with the
+ * mailbox, so Supabase Auth refuses a password-only session. The caller
+ * runs the email-code step (verify-password) first.
+ */
+export class PasswordVerificationRequiredError extends AppError {
+  readonly code = 'PASSWORD_VERIFICATION_REQUIRED' as const
+  constructor(
+    message = 'Confirm it is you with the code we emailed.',
+    options?: { cause?: unknown },
+  ) {
+    super(message, options)
+  }
+}
+
 export class ExternalServiceError extends AppError {
   readonly code = 'EXTERNAL_SERVICE_ERROR' as const
   constructor(
@@ -95,4 +110,5 @@ export type AppErrorCode =
   | ForbiddenError['code']
   | ConflictError['code']
   | AccountPendingDeletionError['code']
+  | PasswordVerificationRequiredError['code']
   | ExternalServiceError['code']
