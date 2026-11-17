@@ -24,5 +24,5 @@ export async function updateSession(request: NextRequest) {
   } catch {
     // intentionally ignored — see jsdoc
   }
-  return response
+  return response()
 }
