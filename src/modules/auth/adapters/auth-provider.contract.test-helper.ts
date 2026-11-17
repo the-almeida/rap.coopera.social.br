@@ -135,6 +135,48 @@ export function authProviderContract(name: string, subject: ContractSubject) {
       expect(await session.getCurrentIdentity()).toEqual(signedIn.ok && signedIn.value)
     })
 
+    it('creates a confirmed account on the server, and refuses an address that already has one', async () => {
+      // Guest accounts only: an address on the reserved guest domain.
+      const email = `guest_${randomUUID().slice(0, 8)}@guest.invalid`
+      emails.push(email)
+
+      const created = await subject
+        .newSession()
+        .createGuestUser({ email, password: PASSWORD, name: 'guest' })
+      const again = await subject
+        .newSession()
+        .createGuestUser({ email, password: PASSWORD, name: 'guest' })
+
+      expect(created).toEqual({ ok: true, value: { userId: expect.any(String), email } })
+      expect(await subject.accountExists(email)).toBe(true)
+      expect(again).toEqual({
+        ok: false,
+        error: expect.objectContaining({
+          code: 'CONFLICT',
+          message: AUTH_ERROR_MESSAGES.nicknameTaken,
+        }),
+      })
+      // Confirmed, but its password is not trusted until the set-up records it.
+      expect(await subject.newSession().probePassword({ email, password: PASSWORD })).toEqual({
+        ok: true,
+        value: 'unverified',
+      })
+    })
+
+    it('deletes an account on the server', async () => {
+      const email = `guest_${randomUUID().slice(0, 8)}@guest.invalid`
+      emails.push(email)
+      const created = await subject
+        .newSession()
+        .createGuestUser({ email, password: PASSWORD, name: 'guest' })
+      if (!created.ok) throw new Error('setup: guest not created')
+
+      const deleted = await subject.newSession().deleteUser(created.value.userId)
+
+      expect(deleted).toEqual({ ok: true, value: undefined })
+      expect(await subject.accountExists(email)).toBe(false)
+    })
+
     it('rejects a wrong password', async () => {
       const email = newEmail('wrong-password')
       await subject.seedUser(email, PASSWORD)

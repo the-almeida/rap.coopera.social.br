@@ -16,6 +16,10 @@ export const users = pgTable(
     // emailed code). Null: never proven, so Supabase Auth refuses
     // password-only sessions (public.custom_access_token_hook).
     passwordVerifiedAt: timestamp('password_verified_at', { withTimezone: true }),
+    // A guest account's nickname: how it signs in, reserved for the account's
+    // whole life (it keeps working after an email is added). Null for
+    // accounts that started with an email.
+    guestNickname: text('guest_nickname').unique(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },

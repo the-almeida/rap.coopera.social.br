@@ -13,6 +13,7 @@ export type SupabaseAuthOperation =
   | 'verify'
   | 'oauth'
   | 'sign-out'
+  | 'admin'
 
 // The failures each operation expects in normal traffic, by Supabase error
 // code (auth-js `AuthApiError.code`). Matching on codes, never on message
@@ -30,6 +31,7 @@ const EXPECTED: Record<SupabaseAuthOperation, Record<string, (cause: Cause) => A
   'otp-request': {},
   oauth: {},
   'sign-out': {},
+  admin: {},
 }
 
 /**

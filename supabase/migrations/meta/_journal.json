@@ -57,6 +57,13 @@
       "when": 1794949900500,
       "tag": "20261117211140_drop_email_proof_columns",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794950832636,
+      "tag": "20261117212712_add_users_guest_nickname",
+      "breakpoints": true
     }
   ]
 }

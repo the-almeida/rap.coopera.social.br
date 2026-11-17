@@ -51,3 +51,31 @@ describe('parseServerEnv: rate-limit Redis credentials', () => {
     expect(parsed.error?.flatten().fieldErrors).toHaveProperty('KV_REST_API_TOKEN')
   })
 })
+
+describe('parseServerEnv: Turnstile keys', () => {
+  it.each([
+    [
+      'a site key without a secret',
+      { NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site' },
+      'TURNSTILE_SECRET_KEY',
+    ],
+    [
+      'a secret without a site key',
+      { TURNSTILE_SECRET_KEY: 'secret' },
+      'NEXT_PUBLIC_TURNSTILE_SITE_KEY',
+    ],
+  ])('rejects %s and names the missing one', (_label, keys, missing) => {
+    // A widget nothing checks, or a check no widget can pass.
+    const parsed = parseServerEnv({ ...required, ...keys })
+
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.flatten().fieldErrors).toHaveProperty(missing)
+  })
+
+  it('accepts both keys together, or neither', () => {
+    const both = { NEXT_PUBLIC_TURNSTILE_SITE_KEY: 'site', TURNSTILE_SECRET_KEY: 'secret' }
+
+    expect(parseServerEnv({ ...required, ...both }).success).toBe(true)
+    expect(parseServerEnv(required).success).toBe(true)
+  })
+})

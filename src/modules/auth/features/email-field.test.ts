@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import type { ZodType } from 'zod'
 
+import { GUEST_EMAIL_REJECTION_MESSAGE } from '../domain/guest'
+
 import { requestSignInOtpSchema } from './request-sign-in-otp/request-sign-in-otp.schema'
 import { requestSignUpOtpSchema } from './request-sign-up-otp/request-sign-up-otp.schema'
 import { signInSchema } from './sign-in/sign-in.schema'
 import { signUpSchema } from './sign-up/sign-up.schema'
 import { verifyOtpSchema } from './verify-otp/verify-otp.schema'
+import { verifyPasswordSchema } from './verify-password/verify-password.schema'
 
 // Every auth slice must take its email field from domain/email.ts, so this
 // sweeps them all. RFC 5321 caps a forward path at 254 characters. Anything longer is not a
@@ -33,6 +36,7 @@ const schemas: Record<string, ZodType> = {
   requestSignInOtpSchema,
   requestSignUpOtpSchema,
   verifyOtpSchema,
+  verifyPasswordSchema,
 }
 
 function emailIssues(schema: ZodType, email: string) {
@@ -50,4 +54,16 @@ describe.each(Object.entries(schemas))('%s email field', (_name, schema) => {
       expect.objectContaining({ code: 'too_big', maximum: 254 }),
     ])
   })
+
+  // Guest accounts live on this reserved domain, created only by the server.
+  // Through an email field nobody could squat a nickname or get mail sent
+  // to an address that can never receive it.
+  it.each(['wolf@guest.invalid', 'Wolf@GUEST.invalid'])(
+    'rejects the guest domain (%s)',
+    (email) => {
+      expect(emailIssues(schema, email)).toEqual([
+        expect.objectContaining({ message: GUEST_EMAIL_REJECTION_MESSAGE }),
+      ])
+    },
+  )
 })

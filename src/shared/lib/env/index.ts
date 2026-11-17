@@ -24,11 +24,17 @@ const sharedShape = {
   NEXT_PUBLIC_SENTRY_DSN: optionalUrl,
   NEXT_PUBLIC_POSTHOG_KEY: optionalString,
   NEXT_PUBLIC_POSTHOG_HOST: optionalUrl,
+  // Public half of the Turnstile pair; the guest form shows the widget when set.
+  NEXT_PUBLIC_TURNSTILE_SITE_KEY: optionalString,
 }
 
 const serverShape = {
   ...sharedShape,
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
+  // Cloudflare Turnstile, asked on every guest attempt (guest accounts are
+  // created through the admin API, where Supabase's own CAPTCHA never runs).
+  // Unset: no CAPTCHA (development and CI). Set both in production.
+  TURNSTILE_SECRET_KEY: optionalString,
   DATABASE_URL: z.url(),
   SENTRY_AUTH_TOKEN: optionalString,
   // OAuth provider credentials, optional. A set client id makes the provider
@@ -56,16 +62,30 @@ const serverShape = {
 // Rate limiting uses Redis only when both are set. One without the other is
 // always a deploy mistake, and silently falling back to per-instance memory
 // would multiply every limit by the number of instances, so fail loudly.
-const serverSchema = z.object(serverShape).superRefine((value, ctx) => {
-  const hasUrl = value.KV_REST_API_URL !== undefined
-  const hasToken = value.KV_REST_API_TOKEN !== undefined
-  if (hasUrl === hasToken) return
-  ctx.addIssue({
-    code: 'custom',
-    path: [hasUrl ? 'KV_REST_API_TOKEN' : 'KV_REST_API_URL'],
-    message: 'KV_REST_API_URL and KV_REST_API_TOKEN must be set together',
+const serverSchema = z
+  .object(serverShape)
+  .superRefine((value, ctx) => {
+    const hasUrl = value.KV_REST_API_URL !== undefined
+    const hasToken = value.KV_REST_API_TOKEN !== undefined
+    if (hasUrl === hasToken) return
+    ctx.addIssue({
+      code: 'custom',
+      path: [hasUrl ? 'KV_REST_API_TOKEN' : 'KV_REST_API_URL'],
+      message: 'KV_REST_API_URL and KV_REST_API_TOKEN must be set together',
+    })
   })
-})
+  .superRefine((value, ctx) => {
+    // A site key alone shows a widget nothing checks; a secret alone refuses
+    // every guest attempt, since no widget can produce a token.
+    const hasSiteKey = value.NEXT_PUBLIC_TURNSTILE_SITE_KEY !== undefined
+    const hasSecret = value.TURNSTILE_SECRET_KEY !== undefined
+    if (hasSiteKey === hasSecret) return
+    ctx.addIssue({
+      code: 'custom',
+      path: [hasSiteKey ? 'TURNSTILE_SECRET_KEY' : 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
+      message: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY must be set together',
+    })
+  })
 const clientSchema = z.object(sharedShape)
 
 type Env = z.infer<typeof serverSchema>
@@ -88,6 +108,7 @@ function readPublicEnv() {
     NEXT_PUBLIC_SENTRY_DSN: process.env.NEXT_PUBLIC_SENTRY_DSN,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    NEXT_PUBLIC_TURNSTILE_SITE_KEY: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
   }
 }
 

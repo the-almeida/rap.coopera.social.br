@@ -1,6 +1,7 @@
 import { randomInt, randomUUID } from 'node:crypto'
 
 import {
+  ConflictError,
   ExternalServiceError,
   PasswordVerificationRequiredError,
   UnauthenticatedError,
@@ -102,6 +103,19 @@ export function createFakeAuth() {
         if (!account.passwordVerified) return err(new PasswordVerificationRequiredError())
         signInAs(account)
         return ok(account.identity)
+      },
+      async createGuestUser({ email, password }) {
+        if (findByEmail(email)) return err(new ConflictError(AUTH_ERROR_MESSAGES.nicknameTaken))
+        return ok(createAccount(email, password, { passwordVerified: false }).identity)
+      },
+      async deleteUser(userId) {
+        const account = accounts.get(userId)
+        if (account) {
+          accounts.delete(userId)
+          byEmail.delete(account.identity.email)
+          sessions.delete(userId)
+        }
+        return ok(undefined)
       },
       async probePassword({ email, password }) {
         const account = findByEmail(email)

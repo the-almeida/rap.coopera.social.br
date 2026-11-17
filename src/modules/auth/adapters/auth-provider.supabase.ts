@@ -1,11 +1,16 @@
 import { isAuthApiError, type SupabaseClient } from '@supabase/supabase-js'
 
-import { ExternalServiceError, PasswordVerificationRequiredError } from '@/shared/lib/errors/base'
+import {
+  ConflictError,
+  ExternalServiceError,
+  PasswordVerificationRequiredError,
+} from '@/shared/lib/errors/base'
 import { err, ok } from '@/shared/lib/result'
 import { logger } from '@/shared/observability/logger'
 
 import { AUTH_ERROR_MESSAGES, type AuthProvider } from '../ports/auth-provider'
 
+import { createSupabaseAdminClient } from './supabase/admin-client'
 import { createSupabaseServerClient } from './supabase/server-client'
 import { createSupabaseStatelessClient } from './supabase/stateless-client'
 import { answersAsCodeSent, mapSupabaseAuthError } from './supabase-auth-errors'
@@ -33,6 +38,29 @@ export function createSupabaseAuthProvider(getClient: () => Promise<SupabaseClie
       }
       if (error) return err(mapSupabaseAuthError('sign-in', error))
       return identityFromSupabaseUser(data.user)
+    },
+    async createGuestUser({ email, password, name }) {
+      // Pre-confirmed and no email sent: safe only because a guest address
+      // can never receive mail (domain/guest.ts). Never a user-typed address.
+      const { data, error } = await createSupabaseAdminClient().auth.admin.createUser({
+        email,
+        password,
+        email_confirm: true,
+        user_metadata: { name },
+        // The marker the database asks for on guest addresses
+        // (*_guest_domain_server_only.sql); users cannot set app_metadata.
+        app_metadata: { guest: true },
+      })
+      if (error && isAuthApiError(error) && error.code === 'email_exists') {
+        return err(new ConflictError(AUTH_ERROR_MESSAGES.nicknameTaken, { cause: error }))
+      }
+      if (error) return err(mapSupabaseAuthError('admin', error))
+      return identityFromSupabaseUser(data.user)
+    },
+    async deleteUser(userId) {
+      const { error } = await createSupabaseAdminClient().auth.admin.deleteUser(userId)
+      if (error) return err(mapSupabaseAuthError('admin', error))
+      return ok(undefined)
     },
     async probePassword({ email, password }) {
       // A throwaway client, so the caller's session cookies stay as they are.

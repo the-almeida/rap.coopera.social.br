@@ -39,6 +39,7 @@ export type AuthError =
 export const AUTH_ERROR_MESSAGES = {
   invalidCredentials: 'Invalid email or password.',
   invalidCode: 'Invalid or expired code.',
+  nicknameTaken: 'This nickname is already taken.',
   tooManyAttempts: 'Too many attempts. Wait a minute and try again.',
   unavailable: 'Sign-in is unavailable right now. Try again.',
   emailUnavailable: 'This email cannot be used. If it is yours, sign in with it instead.',
@@ -64,6 +65,19 @@ export type AuthProvider = {
     password: string
     name: string
   }): Promise<Result<{ confirmationRequired: true }, AuthError>>
+  /**
+   * Server only: creates an already-confirmed account and sends no email.
+   * Only for guest accounts, whose address is on the reserved guest domain
+   * (domain/guest.ts): it has no mailbox to confirm and no owner to protect.
+   * An address that already has an account is `ConflictError`.
+   */
+  createGuestUser(input: {
+    email: string
+    password: string
+    name: string
+  }): Promise<Result<AuthIdentity, AuthError>>
+  /** Server only: deletes an account (undoing a guest set-up that failed halfway). */
+  deleteUser(userId: UserId): Promise<Result<void, AuthError>>
   /**
    * Checks email and password without touching this session (nothing is
    * signed in or out). A wrong password is `UnauthenticatedError`.

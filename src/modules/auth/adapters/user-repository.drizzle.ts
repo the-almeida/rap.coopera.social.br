@@ -38,6 +38,27 @@ export const userRepository = {
     if (!row) return null
     return rowToUser(row.user, row.scheduledFor ? { scheduledFor: row.scheduledFor } : null)
   },
+  /** The account a guest nickname is reserved for, by its current email. */
+  async findByGuestNickname(nickname: string): Promise<{ id: UserId; email: string } | null> {
+    const [row] = await db
+      .select({ id: users.id, email: users.email })
+      .from(users)
+      .where(eq(users.guestNickname, nickname))
+      .limit(1)
+    return row ?? null
+  },
+  /**
+   * Finishes a new guest account in one write: reserves its nickname and
+   * trusts its password (creating the account is the only proof a guest
+   * address can have, see domain/guest.ts).
+   */
+  async completeGuestSetup(id: UserId, nickname: string): Promise<void> {
+    const now = new Date()
+    await db
+      .update(users)
+      .set({ guestNickname: nickname, passwordVerifiedAt: now, updatedAt: now })
+      .where(eq(users.id, id))
+  },
   /** Records that the password was proven together with the mailbox. */
   async markPasswordVerified(id: UserId): Promise<void> {
     await db
