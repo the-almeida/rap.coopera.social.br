@@ -2,11 +2,9 @@ import Link from 'next/link'
 
 import { env } from '@/shared/lib/env'
 
-import { activeOAuthProviders, anonymousSignInsEnabled } from '@/modules/auth'
+import { activeOAuthProviders } from '@/modules/auth'
 
-import { AuthDivider } from '../_components/auth-divider'
 import { AuthErrorBanner } from '../_components/auth-error-banner'
-import { ContinueWithoutAccount } from '../_components/continue-without-account'
 
 import { SignInForm } from './sign-in-form'
 
@@ -32,12 +30,6 @@ export default async function SignInPage({ searchParams }: Props) {
       </header>
       <AuthErrorBanner error={error} context="sign-in" />
       <SignInForm oauthProviders={activeOAuthProviders(env)} />
-      {anonymousSignInsEnabled(env) ? (
-        <>
-          <AuthDivider />
-          <ContinueWithoutAccount />
-        </>
-      ) : null}
     </div>
   )
 }

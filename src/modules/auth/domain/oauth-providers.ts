@@ -28,7 +28,7 @@ export function activeOAuthProviders(env: Readonly<Record<string, unknown>>): OA
 }
 
 // Sign-in methods Supabase lists under `external` that are not OAuth
-// providers. Anonymous sign-ins belong to the anonymous mode, not to this check.
+// providers. Anonymous sign-ins have their own check (they must stay off).
 const NOT_OAUTH = new Set(['email', 'phone', 'anonymous_users'])
 
 function isSupported(name: string): name is OAuthProvider {

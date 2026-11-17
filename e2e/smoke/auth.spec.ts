@@ -31,12 +31,8 @@ test.describe('@smoke auth', () => {
       await expect(
         page.getByRole('button', { name: /^continue with (google|facebook)$/i }),
       ).toHaveCount(0)
-      // The only "or" left separates the forms from the anonymous entry (on by
-      // default); with no provider there is no divider above the email form.
-      await expect(page.getByText('or', { exact: true })).toHaveCount(1)
-      const emailBox = await page.getByLabel('Email').boundingBox()
-      const dividerBox = await page.getByText('or', { exact: true }).boundingBox()
-      expect(dividerBox?.y).toBeGreaterThan(emailBox?.y ?? Infinity)
+      // With no provider there is no divider above the email form.
+      await expect(page.getByText('or', { exact: true })).toHaveCount(0)
     })
   }
 

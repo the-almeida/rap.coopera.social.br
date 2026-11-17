@@ -135,8 +135,8 @@ All settings are in Supabase Dashboard → Authentication.
 3. **Confirm email** (Sign In / Providers → Email). Turn it **off**, matching local (`enable_confirmations = false`). The cloud default is on.
    _If skipped:_ password sign-up creates the user without a session, so the redirect to `/dashboard` bounces back to `/sign-in` with no explanation.
    _Trade-off:_ password sign-up accepts unverified emails. OTP sign-up is unaffected, since entering the code verifies the email.
-4. **Anonymous sign-ins** (Sign In / Providers → "Allow anonymous sign-ins"). Turn it **on**, matching the app's default (anonymous mode, "Continue without an account"). To leave anonymous mode out, set `ANONYMOUS_SIGN_INS_ENABLED=false` in Vercel and keep this off.
-   _If skipped:_ the build fails (`pnpm check:oauth-providers` compares both). Supabase limits anonymous sign-ins to 30 per hour per IP; the limit is per visitor because the sign-in runs in the browser.
+4. **Anonymous sign-ins** (Sign In / Providers → "Allow anonymous sign-ins"). Keep it **off** (the default): the app has no accounts without credentials.
+   _If skipped:_ the build fails (`pnpm check:oauth-providers`), since anyone with the anon key could create such an account.
 5. **Rate limits.** Raise "emails sent per hour" (30 by default with custom SMTP) to fit expected traffic.
    _If skipped:_ every sign-up or sign-in email after the 30th in an hour fails.
 6. **Smoke test.** On the production URL, create an account with a real address, receive the code, and finish sign-up. Then sign out and sign in with an emailed code. This validates SMTP, templates, and URL configuration together.

@@ -10,8 +10,8 @@ import { AUTH_ERROR_MESSAGES, type AuthError, type AuthProvider } from '../ports
  * an OAuth provider vouching for it), on the session that just signed in.
  *
  * With Confirm email off, an account can get a password from someone who
- * never owned the email (sign-up with password, keeping an anonymous
- * account, or calling Supabase directly). Supabase stores a random password
+ * never owned the email (sign-up with password, or calling Supabase
+ * directly). Supabase stores a random password
  * hash even for accounts created without one, so a password set by a person
  * cannot be told apart. So on the first proof of the email, whoever proved
  * it keeps the account: the password is replaced by a random one (harmless

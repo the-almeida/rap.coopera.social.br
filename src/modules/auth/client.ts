@@ -17,9 +17,7 @@
  */
 
 export { OAUTH_PROVIDER_NAME, type OAuthProvider } from './domain/oauth-providers'
-export { NICKNAME_RULE, NicknameSchema } from './domain/nickname'
 export type { Role, User } from './domain/user'
-export { displayName, formatPublicHandle, type PublicProfile } from './domain/public-profile'
 
 export { createSupabaseBrowserClient } from './adapters/supabase/browser-client'
 
@@ -29,7 +27,5 @@ export { signIn } from './features/sign-in/sign-in.handler'
 export { signOut } from './features/sign-out/sign-out.handler'
 export { signUp } from './features/sign-up/sign-up.handler'
 export { verifyOtp } from './features/verify-otp/verify-otp.handler'
-export { keepAccount } from './features/keep-account/keep-account.handler'
 export { setPassword } from './features/set-password/set-password.handler'
 export { SET_PASSWORD_PATH } from './features/set-password/set-password-path'
-export { updateNickname } from './features/update-nickname/update-nickname.handler'

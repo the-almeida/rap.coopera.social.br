@@ -22,8 +22,6 @@ export async function completeOAuthSignInWith(
   const result = await authProvider.exchangeOAuthCode(code)
   if (!result.ok) return result
 
-  // OAuth accounts are never anonymous, so the email is always there.
-  if (!result.value.email) return ok({ ...result.value, mustSetPassword: false })
   const proof = await secureFirstEmailProof(authProvider, result.value.userId, result.value.email)
   if (!proof.ok) return proof
   return ok({ ...result.value, ...proof.value })

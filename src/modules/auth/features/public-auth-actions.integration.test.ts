@@ -113,7 +113,7 @@ describe('public auth actions', () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { userId: expect.any(String), email, isAnonymous: false },
+      value: { userId: expect.any(String), email },
     })
   })
 
@@ -191,7 +191,7 @@ describe('public auth actions', () => {
 
     expect(result).toEqual({
       ok: true,
-      value: { userId: seeded.id, email: seeded.email, isAnonymous: false, mustSetPassword: false },
+      value: { userId: seeded.id, email: seeded.email, mustSetPassword: false },
     })
     const user = await userRepository.findById(seeded.id)
     expect(user?.emailVerifiedAt?.getTime()).toBeGreaterThanOrEqual(before - 1_000)

@@ -77,12 +77,6 @@ export function createSupabaseAuthProvider(getClient: () => Promise<SupabaseClie
       if (error) return err(mapSupabaseAuthError('oauth', error))
       return identityFromSupabaseUser(data.user)
     },
-    async addEmailAndPassword({ email, password }) {
-      const supabase = await getClient()
-      const { data, error } = await supabase.auth.updateUser({ email, password })
-      if (error) return err(mapSupabaseAuthError('add-email', error))
-      return identityFromSupabaseUser(data.user)
-    },
     async replacePassword({ password }) {
       const supabase = await getClient()
       const { error } = await supabase.auth.updateUser({ password })

@@ -62,14 +62,4 @@ describe('deleteExampleEntityFor', () => {
     expect(result).toEqual({ ok: true, value: undefined })
     expect(await fixtures.row(entity.id)).toBeNull()
   })
-
-  it('refuses an anonymous owner and keeps the entity', async () => {
-    const guest = await fixtures.anonymousUser()
-    const entity = await fixtures.insertEntityFor(guest)
-
-    const result = await deleteExampleEntityFor(guest, { id: entity.id })
-
-    expect(result).toEqual({ ok: false, error: expect.objectContaining({ code: 'FORBIDDEN' }) })
-    expect(await fixtures.row(entity.id)).not.toBeNull()
-  })
 })

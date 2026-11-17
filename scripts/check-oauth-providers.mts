@@ -1,17 +1,12 @@
 // Runs before `next build` (see the "build" script in package.json). Fails the
 // build when the app's active OAuth providers and Supabase Auth disagree, when
 // Facebook is active without the secret its data deletion callback needs, when
-// the app's anonymous mode and Supabase's anonymous sign-ins disagree, or when
-// Supabase cannot be asked. Same rule locally, in CI and on deploys.
+// Supabase allows anonymous sign-ins, or when Supabase cannot be asked. Same rule locally, in CI and on deploys.
 //
 // Runs with plain Node (type stripping), so it imports only files without
 // path aliases or bundler-only syntax.
 import { z } from 'zod'
 
-import {
-  anonymousSignInsSetup,
-  findAnonymousSignInMismatch,
-} from '../src/modules/auth/domain/anonymous-sign-ins.ts'
 import {
   activeOAuthProviders,
   facebookDataDeletionSetup,
@@ -66,12 +61,12 @@ const { external } = parsed.data
 const problems = findProviderMismatches(activeOAuthProviders(process.env), external)
 const facebook = facebookDataDeletionSetup(process.env)
 if (facebook.status === 'missing-secret') problems.push(facebook.problem)
-const anonymous = anonymousSignInsSetup(process.env)
-if (anonymous.status === 'invalid') {
-  problems.push(anonymous.problem)
-} else {
-  const mismatch = findAnonymousSignInMismatch(anonymous.enabled, external)
-  if (mismatch) problems.push(mismatch)
+// Every account has credentials (a guest account has a nickname and a
+// password), so Supabase must not hand out accounts without them.
+if (external.anonymous_users) {
+  problems.push(
+    'Anonymous sign-ins are enabled in Supabase, but the app has no anonymous accounts. Turn off "Allow anonymous sign-ins" (Authentication -> Sign In / Providers).',
+  )
 }
 if (problems.length > 0) {
   fail([

@@ -12,9 +12,7 @@ export type OAuthProvider = 'google' | 'facebook'
 
 export type AuthIdentity = {
   userId: UserId
-  /** Null only for anonymous accounts. */
-  email: string | null
-  isAnonymous: boolean
+  email: string
 }
 
 export type AuthError =
@@ -70,16 +68,6 @@ export type AuthProvider = {
    * app's callback for a session, and returns who signed in.
    */
   exchangeOAuthCode(code: string): Promise<Result<AuthIdentity, AuthError>>
-  /**
-   * Makes the signed-in anonymous account permanent: same id, now with this
-   * email and password. Takes effect at once, with no code, while email
-   * confirmations are off (the email is not verified). An email another
-   * account has answers CONFLICT and leaves the account anonymous.
-   */
-  addEmailAndPassword(input: {
-    email: string
-    password: string
-  }): Promise<Result<AuthIdentity, AuthError>>
   /** Sets a new password for the signed-in account. */
   replacePassword(input: { password: string }): Promise<Result<void, AuthError>>
   /** The id of this session (auth.sessions.id), or null when signed out. */

@@ -1,7 +1,6 @@
 import { randomInt, randomUUID } from 'node:crypto'
 
 import {
-  ConflictError,
   ExternalServiceError,
   UnauthenticatedError,
   ValidationError,
@@ -29,7 +28,7 @@ export function createFakeAuth() {
   }
 
   type Account = { identity: AuthIdentity; password: string | null }
-  // By id; permanent accounts are also found by email.
+  // By id, and by email.
   const accounts = new Map<UserId, Account>()
   const byEmail = new Map<string, UserId>()
   const codes = new Map<string, string>()
@@ -43,17 +42,13 @@ export function createFakeAuth() {
     return id ? accounts.get(id) : undefined
   }
 
-  function createAccount(email: string | null, password: string | null, userId?: UserId): Account {
+  function createAccount(email: string, password: string | null, userId?: UserId): Account {
     const account: Account = {
-      identity: {
-        userId: userId ?? UserIdSchema.parse(randomUUID()),
-        email: email === null ? null : key(email),
-        isAnonymous: email === null,
-      },
+      identity: { userId: userId ?? UserIdSchema.parse(randomUUID()), email: key(email) },
       password,
     }
     accounts.set(account.identity.userId, account)
-    if (email !== null) byEmail.set(key(email), account.identity.userId)
+    byEmail.set(key(email), account.identity.userId)
     return account
   }
 
@@ -126,15 +121,6 @@ export function createFakeAuth() {
         signInAs(account)
         return ok(account.identity)
       },
-      async addEmailAndPassword({ email, password }) {
-        const account = current()
-        if (!account) return err(new UnauthenticatedError(AUTH_ERROR_MESSAGES.unavailable))
-        if (findByEmail(email)) return err(new ConflictError(AUTH_ERROR_MESSAGES.emailUnavailable))
-        account.identity = { ...account.identity, email: key(email), isAnonymous: false }
-        account.password = password
-        byEmail.set(key(email), account.identity.userId)
-        return ok(account.identity)
-      },
       async replacePassword({ password }) {
         const account = current()
         if (!account) return err(new UnauthenticatedError(AUTH_ERROR_MESSAGES.unavailable))
@@ -165,13 +151,6 @@ export function createFakeAuth() {
 
   return {
     newSession: (): AuthProvider => newSession(),
-
-    /** Setup only: a session signed in anonymously, as the browser would. */
-    newAnonymousSession(): AuthProvider {
-      const session = newSession()
-      session.signInAs(createAccount(null, null))
-      return session
-    },
 
     /**
      * Setup only (not part of the contract): a confirmed account. Pass the

@@ -36,6 +36,13 @@
       "when": 1794581322310,
       "tag": "20261113144842_add_users_auth_locked_until",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794932607289,
+      "tag": "20261117162327_drop_anonymous_account_columns",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,6 @@
 import { isAuthApiError, isAuthRetryableFetchError } from '@supabase/supabase-js'
 
 import {
-  ConflictError,
   ExternalServiceError,
   UnauthenticatedError,
   ValidationError,
@@ -18,7 +17,6 @@ export type SupabaseAuthOperation =
   | 'verify'
   | 'oauth'
   | 'sign-out'
-  | 'add-email'
   | 'replace-password'
 
 // The failures each operation expects in normal traffic, by Supabase error
@@ -41,11 +39,6 @@ const EXPECTED: Record<SupabaseAuthOperation, Record<string, (cause: Cause) => A
   'otp-request': {},
   oauth: {},
   'sign-out': {},
-  'add-email': {
-    email_exists: (cause) => new ConflictError(AUTH_ERROR_MESSAGES.emailUnavailable, cause),
-    weak_password: (cause) =>
-      new ValidationError(NO_DETAILS, AUTH_ERROR_MESSAGES.weakPassword, cause),
-  },
   'replace-password': {
     same_password: (cause) =>
       new ValidationError(NO_DETAILS, AUTH_ERROR_MESSAGES.samePassword, cause),

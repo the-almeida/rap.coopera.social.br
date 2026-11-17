@@ -39,12 +39,6 @@ export type ContractSubject = {
   cleanup(emails: string[]): Promise<void>
   /** Whether an account exists for this email (checked out of band). */
   accountExists(email: string): Promise<boolean>
-  /**
-   * Setup only: a session signed in anonymously, as the browser does with
-   * "Continue without an account" (not an AuthProvider call: that sign-in
-   * never goes through the server).
-   */
-  newAnonymousSession(): Promise<AuthProvider>
 }
 
 const PASSWORD = 'contract-password-1'
@@ -73,7 +67,7 @@ export function authProviderContract(name: string, subject: ContractSubject) {
 
       expect(signedUp).toEqual({
         ok: true,
-        value: { userId: expect.any(String), email, isAnonymous: false },
+        value: { userId: expect.any(String), email },
       })
       expect(signedIn).toEqual(signedUp)
       // Signed in right away. Holds while email confirmations are off
@@ -151,7 +145,7 @@ export function authProviderContract(name: string, subject: ContractSubject) {
 
       expect(verified).toEqual({
         ok: true,
-        value: { userId: expect.any(String), email, isAnonymous: false },
+        value: { userId: expect.any(String), email },
       })
       // Verifying the code is what signs the browser in.
       expect(await session.getCurrentIdentity()).toEqual(verified.ok && verified.value)
@@ -243,42 +237,9 @@ export function authProviderContract(name: string, subject: ContractSubject) {
       // Stored lowercased, and the same account either way.
       expect(signedUp).toEqual({
         ok: true,
-        value: { userId: expect.any(String), email, isAnonymous: false },
+        value: { userId: expect.any(String), email },
       })
       expect(result).toEqual(signedUp)
-    })
-
-    it('turns an anonymous session into a permanent account with the same id', async () => {
-      const email = newEmail('convert')
-      const session = await subject.newAnonymousSession()
-      const anonymous = await session.getCurrentIdentity()
-      expect(anonymous).toEqual({ userId: expect.any(String), email: null, isAnonymous: true })
-
-      const converted = await session.addEmailAndPassword({ email, password: PASSWORD })
-      const signedIn = await subject.newSession().signInWithPassword({ email, password: PASSWORD })
-
-      const permanent = { userId: anonymous?.userId, email, isAnonymous: false }
-      // Right away, with no code: email confirmations are off (supabase/config.toml).
-      expect(converted).toEqual({ ok: true, value: permanent })
-      expect(await session.getCurrentIdentity()).toEqual(permanent)
-      expect(signedIn).toEqual({ ok: true, value: permanent })
-    })
-
-    it('refuses an email another account has, and the session stays anonymous', async () => {
-      const email = newEmail('convert-taken')
-      await subject.seedUser(email, PASSWORD)
-      const session = await subject.newAnonymousSession()
-
-      const result = await session.addEmailAndPassword({ email, password: 'other-password-1' })
-
-      expect(result).toEqual({
-        ok: false,
-        error: expect.objectContaining({
-          code: 'CONFLICT',
-          message: AUTH_ERROR_MESSAGES.emailUnavailable,
-        }),
-      })
-      expect(await session.getCurrentIdentity()).toMatchObject({ isAnonymous: true, email: null })
     })
 
     it('replaces the password of the signed-in account', async () => {

@@ -36,12 +36,6 @@ export default function PrivacyPage() {
       <h2>3. Personal data we process</h2>
       <ul>
         <li>
-          <strong>Public profile</strong>: the nickname you choose and the number shown with it (for
-          example &ldquo;Wolf #0042&rdquo;). Other users of the service can see it. If you use the
-          service without an account, this profile and the technical data of your session are all we
-          keep about you.
-        </li>
-        <li>
           <strong>Account data</strong>: email address, display name, authentication metadata, and
           OAuth identifiers (Google, Facebook) when you sign in via a third-party provider.
         </li>

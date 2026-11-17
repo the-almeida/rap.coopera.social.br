@@ -37,7 +37,6 @@ function runCheck(vars: Record<string, string>): Promise<Run> {
           NEXT_PUBLIC_SUPABASE_ANON_KEY: env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
           GOOGLE_OAUTH_CLIENT_ID: '',
           FACEBOOK_OAUTH_CLIENT_ID: '',
-          ANONYMOUS_SIGN_INS_ENABLED: '',
           ...vars,
         },
         encoding: 'utf8',
@@ -72,7 +71,7 @@ const settings = (external: Record<string, boolean>) =>
       phone: false,
       google: false,
       facebook: false,
-      anonymous_users: true,
+      anonymous_users: false,
       ...external,
     },
   })
@@ -130,40 +129,13 @@ describe('scripts/check-oauth-providers.mts', () => {
     expect(run.stderr).toContain('FACEBOOK_OAUTH_CLIENT_SECRET is not')
   })
 
-  it('fails the build when anonymous mode is on (the default) but off in Supabase', async () => {
-    const url = await startStub(200, settings({ anonymous_users: false }))
+  it('fails the build while Supabase still allows anonymous sign-ins', async () => {
+    const url = await startStub(200, settings({ anonymous_users: true }))
 
     const run = await runCheck({ NEXT_PUBLIC_SUPABASE_URL: url })
 
     expect(run.code).toBe(1)
-    expect(run.stderr).toContain('Anonymous sign-ins are disabled in Supabase')
-  })
-
-  it('with ANONYMOUS_SIGN_INS_ENABLED=false, passes only when Supabase has them off', async () => {
-    const off = await startStub(200, settings({ anonymous_users: false }))
-    const passes = await runCheck({
-      NEXT_PUBLIC_SUPABASE_URL: off,
-      ANONYMOUS_SIGN_INS_ENABLED: 'false',
-    })
-    await new Promise((closed) => stub!.close(closed))
-    const on = await startStub(200, settings({ anonymous_users: true }))
-    const fails = await runCheck({
-      NEXT_PUBLIC_SUPABASE_URL: on,
-      ANONYMOUS_SIGN_INS_ENABLED: 'false',
-    })
-
-    expect(passes.code).toBe(0)
-    expect(fails.code).toBe(1)
-    expect(fails.stderr).toContain('Anonymous sign-ins are enabled in Supabase')
-  })
-
-  it('fails the build on an ANONYMOUS_SIGN_INS_ENABLED value it cannot read', async () => {
-    const url = await startStub(200, settings({}))
-
-    const run = await runCheck({ NEXT_PUBLIC_SUPABASE_URL: url, ANONYMOUS_SIGN_INS_ENABLED: 'no' })
-
-    expect(run.code).toBe(1)
-    expect(run.stderr).toContain('ANONYMOUS_SIGN_INS_ENABLED must be "true" or "false"')
+    expect(run.stderr).toContain('Anonymous sign-ins are enabled in Supabase')
   })
 
   it('reads the settings with the anon key and never prints it', async () => {

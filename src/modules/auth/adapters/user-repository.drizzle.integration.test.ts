@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 
-import { eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { db } from '@/shared/db/client'
@@ -54,8 +54,6 @@ describe('userRepository.findById', () => {
     expect(user).toMatchObject({
       id: userId,
       name: 'Repo test',
-      isAnonymous: false,
-      profile: null,
       pendingDeletion: null,
     })
   })
@@ -119,28 +117,6 @@ describe('userRepository.findById', () => {
     const user = await userRepository.findById(userId)
 
     expect(user?.pendingDeletion).toEqual({ scheduledFor: past })
-  })
-
-  it('returns an anonymous account with its public profile and no email', async () => {
-    const id = UserIdSchema.parse(randomUUID())
-    await db.execute(sql`
-      INSERT INTO auth.users (id, aud, role, is_anonymous, raw_user_meta_data)
-      VALUES (${id}, 'authenticated', 'authenticated', true, '{"nickname":"Repo anon"}'::jsonb)
-    `)
-    try {
-      const user = await userRepository.findById(id)
-
-      expect(user).toMatchObject({
-        id,
-        isAnonymous: true,
-        email: null,
-        name: null,
-        emailVerifiedAt: null,
-        profile: { nickname: 'Repo anon', discriminator: expect.any(Number) },
-      })
-    } finally {
-      await db.execute(sql`DELETE FROM auth.users WHERE id = ${id}`)
-    }
   })
 
   it('returns null for an unknown id', async () => {
