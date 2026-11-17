@@ -14,6 +14,7 @@ function userFromRow(row: UserRow): User {
     id: row.id,
     email: row.email,
     name: row.name,
+    guestNickname: row.guestNickname,
     role: row.role,
     pendingDeletion: null,
     createdAt: row.createdAt,

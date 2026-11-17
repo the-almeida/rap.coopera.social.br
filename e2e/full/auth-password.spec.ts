@@ -15,7 +15,7 @@ test.describe('password sign-up', () => {
     const name = 'Eve Newuser'
     const password = 'strong-password-123'
 
-    await page.goto('/sign-up')
+    await page.goto('/sign-up?method=account')
     await page.getByLabel('Name').fill(name)
     await page.getByLabel('Email').fill(email)
     await page.getByLabel('Password').fill(password)
@@ -44,7 +44,7 @@ test.describe('password not yet verified', () => {
   }) => {
     const user = await seedUser({ passwordVerified: false })
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByLabel('Password').fill(user.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
@@ -64,7 +64,7 @@ test.describe('password not yet verified', () => {
   test('knowing the password without the mailbox opens no session', async ({ page, seedUser }) => {
     const user = await seedUser({ passwordVerified: false })
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByLabel('Password').fill(user.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
@@ -79,7 +79,7 @@ test.describe('password sign-in', () => {
   test('seeded user can sign in and see their dashboard', async ({ page, seedUser }) => {
     const user = await seedUser({ name: 'Frank Existing' })
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByLabel('Password').fill(user.password)
     await page.getByRole('button', { name: 'Sign in' }).click()
@@ -94,7 +94,7 @@ test.describe('password sign-in', () => {
   }) => {
     const user = await seedUser()
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByLabel('Password').fill('definitely-not-the-password')
     await page.getByRole('button', { name: 'Sign in' }).click()
@@ -115,7 +115,7 @@ test.describe('sign-out', () => {
   test('signed-in user can sign out and is redirected to /sign-in', async ({ page, seedUser }) => {
     const user = await seedUser()
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByLabel('Password').fill(user.password)
     await page.getByRole('button', { name: 'Sign in' }).click()

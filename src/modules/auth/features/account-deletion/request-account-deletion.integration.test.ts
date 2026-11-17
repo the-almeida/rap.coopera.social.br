@@ -50,6 +50,7 @@ describe('requestAccountDeletionForUser', () => {
       id: UserIdSchema.parse(data.user.id),
       email: data.user.email!,
       name: `Logic ${prefix}`,
+      guestNickname: null,
       role: 'user' as const,
       pendingDeletion: null,
       createdAt: new Date(),

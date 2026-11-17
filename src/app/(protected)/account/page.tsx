@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation'
 
 import { Button } from '@/shared/ui/button'
 
-import { requireUser, requestAccountDeletion } from '@/modules/auth'
+import { isGuestAccount, requireUser, requestAccountDeletion } from '@/modules/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,7 +26,7 @@ export default async function AccountPage() {
       <header>
         <h1 className="text-2xl font-bold">Account</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Signed in as <strong>{user.email}</strong>.
+          Signed in as <strong>{isGuestAccount(user) ? user.guestNickname : user.email}</strong>.
         </p>
       </header>
 

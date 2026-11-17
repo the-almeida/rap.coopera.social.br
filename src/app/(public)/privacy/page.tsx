@@ -37,7 +37,8 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Account data</strong>: email address, display name, authentication metadata, and
-          OAuth identifiers (Google, Facebook) when you sign in via a third-party provider.
+          OAuth identifiers (Google, Facebook) when you sign in via a third-party provider. For a
+          guest account: the nickname you choose, which is also your display name.
         </li>
         <li>
           <strong>Usage data</strong>: pages viewed, actions taken in the product, request
@@ -151,8 +152,10 @@ export default function PrivacyPage() {
       <h2>11. Cookies</h2>
       <p>
         We use strictly necessary cookies to keep you signed in and to maintain the security of your
-        session. Where we use non-essential cookies (for example, product analytics), we request
-        consent through a separate notice before any such cookie is set.
+        session, plus one preference cookie that remembers which sign-in option you chose last (it
+        stores only that choice, no personal data). Where we use non-essential cookies (for example,
+        product analytics), we request consent through a separate notice before any such cookie is
+        set.
       </p>
 
       <h2>12. Children</h2>

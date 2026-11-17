@@ -6,15 +6,29 @@ import { expect, test } from '../fixtures/auth'
 test.describe.configure({ mode: 'serial' })
 
 test.describe('@smoke auth', () => {
-  test('sign-in page renders and passes a11y', async ({ page, expectNoA11yViolations }) => {
+  test('the first step (choose how to continue) passes a11y', async ({
+    page,
+    expectNoA11yViolations,
+  }) => {
     await page.goto('/sign-in')
-    await expect(page.getByRole('heading')).toBeVisible()
+    await expect(page.getByRole('navigation', { name: 'Choose how to continue' })).toBeVisible()
     await expectNoA11yViolations(page)
   })
 
-  test('sign-up page renders and passes a11y', async ({ page, expectNoA11yViolations }) => {
-    await page.goto('/sign-up')
-    await expect(page.getByRole('heading')).toBeVisible()
+  for (const path of ['/sign-in', '/sign-up']) {
+    test(`${path} account step renders and passes a11y`, async ({
+      page,
+      expectNoA11yViolations,
+    }) => {
+      await page.goto(`${path}?method=account`)
+      await expect(page.getByLabel('Email')).toBeVisible()
+      await expectNoA11yViolations(page)
+    })
+  }
+
+  test('the guest step renders and passes a11y', async ({ page, expectNoA11yViolations }) => {
+    await page.goto('/sign-in?method=guest')
+    await expect(page.getByLabel('Nickname')).toBeVisible()
     await expectNoA11yViolations(page)
   })
 
@@ -24,7 +38,7 @@ test.describe('@smoke auth', () => {
     test(`${path} shows no OAuth buttons or divider when no provider is active`, async ({
       page,
     }) => {
-      await page.goto(path)
+      await page.goto(`${path}?method=account`)
       // Anchor: the email form rendered, so the absence below is meaningful.
       await expect(page.getByLabel('Email')).toBeVisible()
 
@@ -44,7 +58,7 @@ test.describe('@smoke auth', () => {
     // Trigger the verify view via the sign-in OTP path (no name field
     // needed). Same OtpVerifyForm component renders on /sign-up.
     const user = await seedUser()
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByRole('button', { name: 'Or send me a 6-digit code instead' }).click()
     await expect(page.getByLabel('6-digit code')).toBeVisible()

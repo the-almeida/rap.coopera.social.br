@@ -12,6 +12,7 @@ function rowToUser(row: typeof users.$inferSelect, pendingDeletion: User['pendin
     id: row.id,
     email: row.email,
     name: row.name,
+    guestNickname: row.guestNickname,
     role: row.role,
     pendingDeletion,
     createdAt: row.createdAt,

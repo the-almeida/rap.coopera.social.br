@@ -49,12 +49,27 @@ type AuthFixtures = {
   ) => Promise<SeededUser>
   pollOtp: (recipient: string) => Promise<string>
   uniqueEmail: (prefix?: string) => string
+  /** A nickname no guest account has yet; its account is deleted after the test. */
+  uniqueNickname: () => string
   signInAs: (page: Page, user: SeededUser) => Promise<void>
 }
 
 export const test = base.extend<AuthFixtures>({
   uniqueEmail: async ({}, use) => {
     await use((prefix = 'e2e') => `${prefix}-${randomUUID()}@integration.test`)
+  },
+  uniqueNickname: async ({}, use) => {
+    const nicknames: string[] = []
+    await use(() => {
+      const nickname = `e2e_${randomUUID().replaceAll('-', '').slice(0, 20)}`
+      nicknames.push(nickname)
+      return nickname
+    })
+    const admin = getAdmin()
+    for (const nickname of nicknames) {
+      const { data } = await admin.from('users').select('id').eq('guest_nickname', nickname)
+      for (const row of data ?? []) await admin.auth.admin.deleteUser(row.id as string)
+    }
   },
   pollOtp: async ({}, use) => {
     await use(async (recipient: string) => {
@@ -81,7 +96,7 @@ export const test = base.extend<AuthFixtures>({
   },
   signInAs: async ({}, use) => {
     await use(async (page, user) => {
-      await page.goto('/sign-in')
+      await page.goto('/sign-in?method=account')
       await page.getByLabel('Email').fill(user.email)
       await page.getByLabel('Password').fill(user.password)
       await page.getByRole('button', { name: 'Sign in' }).click()

@@ -14,7 +14,7 @@ test.describe('OTP sign-up', () => {
     const email = uniqueEmail('otp-signup')
     const name = 'Gary Newuser'
 
-    await page.goto('/sign-up')
+    await page.goto('/sign-up?method=account')
     await page.getByLabel('Name').fill(name)
     await page.getByLabel('Email').fill(email)
     await page.getByRole('button', { name: 'Or send me a 6-digit code instead' }).click()
@@ -35,7 +35,7 @@ test.describe('OTP sign-in', () => {
   test('seeded user gets a code and signs in', async ({ page, pollOtp, seedUser }) => {
     const user = await seedUser({ name: 'Hannah Existing' })
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(user.email)
     await page.getByRole('button', { name: 'Or send me a 6-digit code instead' }).click()
 
@@ -55,7 +55,7 @@ test.describe('OTP sign-in', () => {
   }) => {
     const email = uniqueEmail('otp-unknown')
 
-    await page.goto('/sign-in')
+    await page.goto('/sign-in?method=account')
     await page.getByLabel('Email').fill(email)
     await page.getByRole('button', { name: 'Or send me a 6-digit code instead' }).click()
 

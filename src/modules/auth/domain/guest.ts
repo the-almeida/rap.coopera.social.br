@@ -47,5 +47,13 @@ export function isGuestEmail(email: string): boolean {
   return email.toLowerCase().endsWith(`@${GUEST_EMAIL_DOMAIN}`)
 }
 
+/**
+ * A guest account is one still on its guest address. Its nickname stays with
+ * it after a real email is added, so the nickname alone does not tell.
+ */
+export function isGuestAccount(user: { email: string }): boolean {
+  return isGuestEmail(user.email)
+}
+
 export const GUEST_EMAIL_REJECTION_MESSAGE =
   'This address is reserved for guest accounts. Guests sign in with their nickname instead.'

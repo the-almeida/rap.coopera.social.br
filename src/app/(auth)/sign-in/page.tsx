@@ -1,35 +1,25 @@
-import Link from 'next/link'
-
 import { env } from '@/shared/lib/env'
 
 import { activeOAuthProviders } from '@/modules/auth'
 
-import { AuthErrorBanner } from '../_components/auth-error-banner'
+import { AuthEntry } from '../_components/auth-entry'
 
 import { SignInForm } from './sign-in-form'
 
 type Props = {
-  searchParams: Promise<{ error?: string | string[] }>
+  searchParams: Promise<{ error?: string | string[]; method?: string | string[] }>
 }
 
 export default async function SignInPage({ searchParams }: Props) {
-  const params = await searchParams
-  const error = Array.isArray(params.error) ? params.error[0] : params.error
-
   return (
-    <div className="flex flex-col gap-6">
-      <header>
-        <h1 className="text-xl font-semibold">Sign in</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          New here?{' '}
-          <Link href="/sign-up" className="underline">
-            Create an account
-          </Link>
-          .
-        </p>
-      </header>
-      <AuthErrorBanner error={error} context="sign-in" />
-      <SignInForm oauthProviders={activeOAuthProviders(env)} />
-    </div>
+    <AuthEntry
+      searchParams={await searchParams}
+      page={{
+        path: '/sign-in',
+        title: 'Sign in',
+        crossLink: { prompt: 'New here?', label: 'Create an account', href: '/sign-up' },
+        accountForm: <SignInForm oauthProviders={activeOAuthProviders(env)} />,
+      }}
+    />
   )
 }

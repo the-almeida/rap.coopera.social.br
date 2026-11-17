@@ -11,6 +11,7 @@ function user(pendingDeletion: User['pendingDeletion']): User {
     id: UserIdSchema.parse('00000000-0000-4000-8000-000000000001'),
     email: 'someone@example.test',
     name: 'Someone',
+    guestNickname: null,
     role: 'user',
     pendingDeletion,
     createdAt: new Date(),

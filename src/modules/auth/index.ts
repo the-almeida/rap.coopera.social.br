@@ -26,6 +26,7 @@
 export type { Policy } from './domain/policy'
 export { isAdmin } from './domain/policy'
 export type { Role, User } from './domain/user'
+export { isGuestAccount } from './domain/guest'
 
 export { getOptionalUser } from './get-optional-user'
 export { requireUser, type Allowance } from './require-user'
