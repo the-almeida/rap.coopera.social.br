@@ -16,7 +16,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-background text-foreground min-h-screen antialiased">
         <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
           <div className="flex min-h-screen flex-col">
-            <div className="flex-1">{children}</div>
+            {/* The only element sized to the viewport. Route-group layouts and pages
+                fill the rest with `flex-1`, never another `min-h-screen`, which
+                would push the footer below the fold. */}
+            <div className="flex flex-1 flex-col">{children}</div>
             <LegalFooter />
           </div>
         </ThemeProvider>

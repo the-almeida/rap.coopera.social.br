@@ -18,5 +18,5 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const redirectTo = resolveProtectedRouteRedirect(userResult.value, pathname)
   if (redirectTo && redirectTo !== pathname) redirect(redirectTo)
 
-  return <main className="min-h-screen p-6">{children}</main>
+  return <main className="flex-1 p-6">{children}</main>
 }

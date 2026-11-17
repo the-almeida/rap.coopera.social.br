@@ -9,7 +9,7 @@ export default async function AuthLayout({ children }: { children: React.ReactNo
   if (user) redirect('/dashboard')
 
   return (
-    <main className="bg-background flex min-h-screen items-center justify-center px-4">
+    <main className="bg-background flex flex-1 items-center justify-center px-4 py-6">
       <div className="border-border w-full max-w-sm rounded-lg border p-6">{children}</div>
     </main>
   )
