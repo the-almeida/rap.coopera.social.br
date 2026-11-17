@@ -81,7 +81,31 @@ Alternatives if Resend does not fit: Brevo (daily free quota), Postmark (strong 
 
 - **Serverless opens many connections.** Each Vercel instance opens its own, and a traffic spike can hit Postgres's limit. The pooler shares a few real connections across all instances.
 - **Direct connection doesn't work from Vercel.** It's IPv6-only, and Vercel doesn't support IPv6.
-- **`prepare: false` is required in this mode**, and `src/shared/db/client.ts` already sets it.
+- **`prepare: false` is required in this mode**, and `src/shared/db/query-client.ts` already sets it.
+
+#### Encrypted database connection
+
+The connection strings Supabase hands out name no `sslmode`, and postgres.js does not ask for TLS by itself. `src/shared/db/ssl.ts` chooses the mode from `DATABASE_URL`:
+
+| `DATABASE_URL`                    | Connection                                          |
+| --------------------------------- | --------------------------------------------------- |
+| Remote host, no `sslmode`         | TLS (`require`): encrypted, certificate not checked |
+| `localhost`, `127.0.0.1`, `[::1]` | Plain (local Supabase, CI)                          |
+| `?sslmode=…` or `?sslrootcert=…`  | What the URL says, e.g. `verify-full`               |
+| `?sslmode=disable`                | Plain, for a non-loopback dev database without TLS  |
+
+Turn on Supabase's **Enforce SSL** only after the app encrypts, or the old deployment can't connect:
+
+1. Deploy this version.
+2. In the Supabase SQL editor, confirm that the app's connections show `ssl = true`:
+   ```sql
+   SELECT a.application_name, s.ssl, s.version
+   FROM pg_stat_activity a JOIN pg_stat_ssl s USING (pid)
+   WHERE a.datname = 'postgres';
+   ```
+3. Supabase → Database → Settings → **Enforce SSL on incoming connections**: on.
+
+`require` stops anyone reading the traffic but not an active man-in-the-middle. To also check the server's certificate, use `sslmode=verify-full` with Supabase's CA certificate (a follow-up, not set up yet).
 
 #### Preview deployments
 
