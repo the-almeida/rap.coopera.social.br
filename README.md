@@ -32,15 +32,19 @@ Useful local URLs (exact ports: `pnpm supabase:status`):
 
 Only Docker (for Supabase) is required locally. Everything else can stay blank in `.env.local`:
 
-| Service            | Env vars                                                   | When blank                                                                                |
-| ------------------ | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
-| Sentry             | `NEXT_PUBLIC_SENTRY_DSN`                                   | Not initialized, nothing is sent                                                          |
-| PostHog            | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`      | `track()` / `track.client()` are no-ops                                                   |
-| Redis (rate limit) | `KV_REST_API_URL`, `KV_REST_API_TOKEN`                     | In-memory counter, with a warning on first use                                            |
-| Google OAuth       | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`     | "Continue with Google" button is hidden. Email sign-in still works                        |
-| Facebook OAuth     | `FACEBOOK_OAUTH_CLIENT_ID`, `FACEBOOK_OAUTH_CLIENT_SECRET` | "Continue with Facebook" button is hidden; `/api/auth/facebook/data-deletion` returns 404 |
+| Service            | Env vars                                                   | When blank                                                                                                                         |
+| ------------------ | ---------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Sentry             | `NEXT_PUBLIC_SENTRY_DSN`                                   | Not initialized, nothing is sent                                                                                                   |
+| PostHog            | `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`      | `track()` / `track.client()` are no-ops                                                                                            |
+| Redis (rate limit) | `KV_REST_API_URL`, `KV_REST_API_TOKEN`                     | In-memory counter, with a warning on first use                                                                                     |
+| Google OAuth       | `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`     | "Continue with Google" button is hidden. Email sign-in still works                                                                 |
+| Facebook OAuth     | `FACEBOOK_OAUTH_CLIENT_ID`, `FACEBOOK_OAUTH_CLIENT_SECRET` | "Continue with Facebook" button is hidden; `/api/auth/facebook/data-deletion` returns 404                                          |
+| Turnstile CAPTCHA  | `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`   | Guest access asks for no CAPTCHA (rate limits only). Set both together                                                             |
+| App email (Resend) | `RESEND_API_KEY`, `EMAIL_FROM` (`MAILPIT_URL` locally)     | Locally the code that adds an email to a guest account lands in Mailpit; with none set, that step says the email could not be sent |
 
-Production requirements differ (SMTP and Redis become mandatory in practice). See [docs/deployment.md](./docs/deployment.md).
+Sign-in and sign-up start with a choice: a secure account (email, Google or Facebook, email confirmed) or guest access with a nickname and a password, which a guest can protect later by adding an email or linking a provider. The decision and its trade-offs: [ADR-0009](./docs/adr/0009-guest-and-secure-accounts.md).
+
+Production requirements differ (SMTP, Redis, Turnstile and an app email provider become mandatory in practice). See [docs/deployment.md](./docs/deployment.md).
 
 ### Tests
 

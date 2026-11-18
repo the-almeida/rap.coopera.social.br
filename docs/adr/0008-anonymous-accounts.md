@@ -1,7 +1,7 @@
 # 0008. Anonymous Accounts in the Base Template
 
 Date: 2026-11-12
-Status: Accepted.
+Status: Superseded by 0009.
 
 ## Context
 

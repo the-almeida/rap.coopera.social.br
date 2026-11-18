@@ -28,4 +28,12 @@ This file holds the project's shared vocabulary. Terms here are canonical — co
 
 **verified password** — The account's password was proven together with its mailbox: the emailed code and the password, both right in one go (the verify-password step after a password sign-up, or at the first password sign-in of an older account). Recorded as `password_verified_at`. Until then Supabase Auth refuses sessions opened with the password alone; code and OAuth sign-ins are unaffected. Distinct from a confirmed email, which only proves the mailbox.
 
+**secure account** — An account that started with an email, Google or Facebook. Its email is confirmed, so it can be recovered through it. Its password, if any, is a **verified password** before it signs in alone. The first choice on the sign-in and sign-up pages ("secure/persistent account").
+
+**guest account** — An account that started with a **nickname** and a password, no email ("visitor" or "visitant access" in the UI). Behind it is the address `<nickname>@guest.invalid`, which no mailbox can have and nobody ever sees. It cannot be recovered if the password is lost until it is **protected**. It stays a guest account while its email is on the guest domain; the nickname alone does not tell, since it stays with the account.
+
+**nickname** — How a guest account signs in: 3 to 30 lowercase letters, digits or `_`, unique, and reserved for the account's whole life, so it keeps signing in after an email is added. Also its display name.
+
+**protect (a guest account)** — Give it a way back: add a verified email (the app's own emailed code) or link Google or Facebook. Until then a banner on every protected page asks for it.
+
 **evasive test** — A test containing steps or assertions that exist only to bypass a failing path (filling a field the code under test does not read, swallowing an expected exception with a generic catch, asserting absence of an element that was never going to render, sleeping instead of waiting on a real signal) rather than letting the failure surface the underlying bug. Detected by `@wc-test-auditor`, which runs from `/wc-tdd` after each GREEN. Findings are either resolved by editing the test or overridden inline with `// @wc-test-auditor-allow: <heuristic-id> — <reason>`. Distinct from "flaky test" (nondeterminism) and "brittle test" (over-coupled to implementation).
