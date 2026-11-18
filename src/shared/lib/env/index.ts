@@ -35,6 +35,13 @@ const serverShape = {
   // created through the admin API, where Supabase's own CAPTCHA never runs).
   // Unset: no CAPTCHA (development and CI). Set both in production.
   TURNSTILE_SECRET_KEY: optionalString,
+  // Emails the app sends itself (the code that adds an email to a guest
+  // account). Resend in production, with a sender on a verified domain;
+  // Mailpit, the local Supabase inbox, in development and CI. With neither,
+  // those emails fail with a clear error.
+  RESEND_API_KEY: optionalString,
+  EMAIL_FROM: optionalString,
+  MAILPIT_URL: optionalUrl,
   DATABASE_URL: z.url(),
   SENTRY_AUTH_TOKEN: optionalString,
   // OAuth provider credentials, optional. A set client id makes the provider
@@ -84,6 +91,15 @@ const serverSchema = z
       code: 'custom',
       path: [hasSiteKey ? 'TURNSTILE_SECRET_KEY' : 'NEXT_PUBLIC_TURNSTILE_SITE_KEY'],
       message: 'NEXT_PUBLIC_TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY must be set together',
+    })
+  })
+  .superRefine((value, ctx) => {
+    // Resend sends only from a verified sender, so a key alone fails every email.
+    if (value.RESEND_API_KEY === undefined || value.EMAIL_FROM !== undefined) return
+    ctx.addIssue({
+      code: 'custom',
+      path: ['EMAIL_FROM'],
+      message: 'EMAIL_FROM is required when RESEND_API_KEY is set',
     })
   })
 const clientSchema = z.object(sharedShape)

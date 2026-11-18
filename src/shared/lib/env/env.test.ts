@@ -79,3 +79,18 @@ describe('parseServerEnv: Turnstile keys', () => {
     expect(parseServerEnv(required).success).toBe(true)
   })
 })
+
+describe('parseServerEnv: Resend', () => {
+  it('refuses an API key without a sender and names the missing one', () => {
+    const parsed = parseServerEnv({ ...required, RESEND_API_KEY: 're_123' })
+
+    expect(parsed.success).toBe(false)
+    expect(parsed.error?.flatten().fieldErrors).toHaveProperty('EMAIL_FROM')
+  })
+
+  it('accepts the key with its sender', () => {
+    expect(
+      parseServerEnv({ ...required, RESEND_API_KEY: 're_123', EMAIL_FROM: 'App <a@b.co>' }).success,
+    ).toBe(true)
+  })
+})

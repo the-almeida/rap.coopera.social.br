@@ -9,6 +9,7 @@ export const eventSchemas = {
   [Events.USER_SIGNED_IN]: z.object({
     method: z.enum(['email', 'otp', 'google', 'facebook', 'guest']),
   }),
+  [Events.ACCOUNT_PROTECTED]: z.object({ method: z.enum(['email', 'oauth']) }),
   [Events.USER_SIGNED_OUT]: z.object({}),
   [Events.CRITICAL_ERROR_SHOWN]: z.object({
     page: z.string(),

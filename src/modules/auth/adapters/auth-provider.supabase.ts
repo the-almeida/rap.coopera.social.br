@@ -57,6 +57,23 @@ export function createSupabaseAuthProvider(getClient: () => Promise<SupabaseClie
       if (error) return err(mapSupabaseAuthError('admin', error))
       return identityFromSupabaseUser(data.user)
     },
+    async setVerifiedEmail({ userId, email }) {
+      const { error } = await createSupabaseAdminClient().auth.admin.updateUserById(userId, {
+        email,
+        email_confirm: true,
+      })
+      if (error) return err(mapSupabaseAuthError('admin', error))
+      return ok(undefined)
+    },
+    async getCurrentIdentityProviders() {
+      const supabase = await getClient()
+      try {
+        const { data } = await supabase.auth.getUser()
+        return data.user?.identities?.map((identity) => identity.provider) ?? []
+      } catch {
+        return []
+      }
+    },
     async deleteUser(userId) {
       const { error } = await createSupabaseAdminClient().auth.admin.deleteUser(userId)
       if (error) return err(mapSupabaseAuthError('admin', error))

@@ -36,6 +36,8 @@ export function createFakeAuth() {
     password: string | null
     confirmed: boolean
     passwordVerified: boolean
+    /** OAuth providers linked to the account, besides its email. */
+    linkedProviders: string[]
   }
   // By id, and by email.
   const accounts = new Map<UserId, Account>()
@@ -65,6 +67,7 @@ export function createFakeAuth() {
       password,
       confirmed,
       passwordVerified,
+      linkedProviders: [],
     }
     accounts.set(account.identity.userId, account)
     byEmail.set(key(email), account.identity.userId)
@@ -107,6 +110,23 @@ export function createFakeAuth() {
       async createGuestUser({ email, password }) {
         if (findByEmail(email)) return err(new ConflictError(AUTH_ERROR_MESSAGES.nicknameTaken))
         return ok(createAccount(email, password, { passwordVerified: false }).identity)
+      },
+      async setVerifiedEmail({ userId, email }) {
+        const account = accounts.get(userId)
+        if (!account)
+          return err(new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.unavailable))
+        // Supabase's unique index refuses it with a bare 500.
+        if (findByEmail(email)) {
+          return err(new ExternalServiceError('supabase', AUTH_ERROR_MESSAGES.unavailable))
+        }
+        byEmail.delete(account.identity.email)
+        account.identity = { ...account.identity, email: key(email) }
+        byEmail.set(key(email), userId)
+        return ok(undefined)
+      },
+      async getCurrentIdentityProviders() {
+        const account = current()
+        return account ? ['email', ...account.linkedProviders] : []
       },
       async deleteUser(userId) {
         const account = accounts.get(userId)
@@ -197,6 +217,13 @@ export function createFakeAuth() {
       passwordVerified?: boolean
     }): AuthIdentity {
       return createAccount(email, password, { userId, passwordVerified }).identity
+    },
+
+    /** Setup only: a Google or Facebook identity linked to the account. */
+    linkProvider(email: string, provider: 'google' | 'facebook'): void {
+      const account = findByEmail(email)
+      if (!account) throw new Error(`no account for ${email}`)
+      account.linkedProviders.push(provider)
     },
 
     /** Setup only: what verify-password records in public.users for Supabase. */

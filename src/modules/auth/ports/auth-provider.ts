@@ -76,6 +76,20 @@ export type AuthProvider = {
     password: string
     name: string
   }): Promise<Result<AuthIdentity, AuthError>>
+  /**
+   * Server only: moves an account to an email the app verified itself (with
+   * its own emailed code), skipping Supabase's confirmation of the change.
+   * For guest accounts, whose current address cannot receive the code
+   * Supabase's secure email change would send it. An email another account
+   * has fails without a reason Supabase tells apart, so callers check first.
+   */
+  setVerifiedEmail(input: { userId: UserId; email: string }): Promise<Result<void, AuthError>>
+  /**
+   * How the signed-in account can sign in ('email', 'google', 'facebook'…);
+   * empty without a session. A guest with Google or Facebook linked can be
+   * recovered through it.
+   */
+  getCurrentIdentityProviders(): Promise<string[]>
   /** Server only: deletes an account (undoing a guest set-up that failed halfway). */
   deleteUser(userId: UserId): Promise<Result<void, AuthError>>
   /**

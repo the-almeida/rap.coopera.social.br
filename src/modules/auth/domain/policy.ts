@@ -1,6 +1,7 @@
-import type { ForbiddenError } from '@/shared/lib/errors/base'
-import { ok, type Result } from '@/shared/lib/result'
+import { ForbiddenError } from '@/shared/lib/errors/base'
+import { err, ok, type Result } from '@/shared/lib/result'
 
+import { isGuestAccount } from './guest'
 import type { User } from './user'
 
 export type Policy<TAction> = (user: User, action: TAction) => Result<void, ForbiddenError>
@@ -23,3 +24,15 @@ export function isAdmin(user: User): boolean {
 export type AccountDeletionAction = { type: 'request' } | { type: 'cancel' }
 
 export const accountDeletionPolicy: Policy<AccountDeletionAction> = () => ok(undefined)
+
+/**
+ * Protecting a guest account: adding a verified email, or linking Google or
+ * Facebook. Only an account still on its guest address may: for any other,
+ * changing the email is a different feature with its own checks.
+ */
+export type AccountProtectionAction = { type: 'add-email' } | { type: 'link-provider' }
+
+export const accountProtectionPolicy: Policy<AccountProtectionAction> = (user, action) =>
+  isGuestAccount(user)
+    ? ok(undefined)
+    : err(new ForbiddenError(`only guest accounts can ${action.type}`))

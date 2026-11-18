@@ -87,7 +87,8 @@ async function seedFacebookUser(): Promise<{ userId: UserId; facebookId: string 
   const userId = UserIdSchema.parse(data.user.id)
   createdUserIds.push(userId)
   const facebookId = `fb-${randomUUID()}`
-  const identityData = JSON.stringify({ sub: facebookId })
+  // Facebook sends the account's email, as Supabase stores it.
+  const identityData = JSON.stringify({ sub: facebookId, email: data.user.email })
   await db.execute(
     sql`INSERT INTO auth.identities (provider, provider_id, user_id, identity_data) VALUES ('facebook', ${facebookId}, ${userId}::uuid, ${identityData}::jsonb)`,
   )

@@ -98,6 +98,16 @@ describe('oauthCallbackInputSchema', () => {
     expect(result.data.from).toBe('/sign-up')
   })
 
+  it('accepts `from=/account/protect`, where a guest links Google or Facebook', () => {
+    const result = oauthCallbackInputSchema.safeParse({
+      code: 'valid-code',
+      from: '/account/protect',
+    })
+    expect(result.success).toBe(true)
+    if (!result.success) throw result.error
+    expect(result.data.from).toBe('/account/protect')
+  })
+
   it('rejects `from` values outside the allow-list (open-redirect guard)', () => {
     for (const hostile of ['/dashboard', 'https://evil.com', '/sign-in/../etc', '//evil.com']) {
       const result = oauthCallbackInputSchema.safeParse({

@@ -65,7 +65,8 @@ describe('handleFacebookDataDeletion', () => {
     // Facebook OAuth sign-in. We don't run the full OAuth flow because
     // local Supabase can't talk to facebook.com.
     const facebookId = `fb-${randomUUID()}`
-    const identityData = JSON.stringify({ sub: facebookId })
+    // Facebook sends the account's email, as Supabase stores it.
+    const identityData = JSON.stringify({ sub: facebookId, email: data.user.email })
     await db.execute(
       sql`INSERT INTO auth.identities (provider, provider_id, user_id, identity_data) VALUES ('facebook', ${facebookId}, ${userId}::uuid, ${identityData}::jsonb)`,
     )

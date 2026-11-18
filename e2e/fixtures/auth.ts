@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 import type { Page } from '@playwright/test'
@@ -55,6 +55,15 @@ type AuthFixtures = {
 }
 
 export const test = base.extend<AuthFixtures>({
+  // Each test is its own visitor: a client IP of its own (from the range kept
+  // for documentation, RFC 5737), so the app's per-IP limits, such as guest
+  // accounts created per minute, count each test apart instead of the whole run.
+  context: async ({ context }, use, testInfo) => {
+    const n = createHash('sha256').update(testInfo.testId).digest().readUInt16BE(0)
+    const ip = `${n % 2 ? '198.51.100' : '203.0.113'}.${((n >> 1) % 254) + 1}`
+    await context.setExtraHTTPHeaders({ 'x-forwarded-for': ip })
+    await use(context)
+  },
   uniqueEmail: async ({}, use) => {
     await use((prefix = 'e2e') => `${prefix}-${randomUUID()}@integration.test`)
   },

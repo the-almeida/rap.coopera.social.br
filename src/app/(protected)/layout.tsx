@@ -1,7 +1,9 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { requireUser, resolveProtectedRouteRedirect } from '@/modules/auth'
+import { getAccountProtection, requireUser, resolveProtectedRouteRedirect } from '@/modules/auth'
+
+import { GuestAccountBanner } from './_components/guest-account-banner'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,5 +20,12 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const redirectTo = resolveProtectedRouteRedirect(userResult.value, pathname)
   if (redirectTo && redirectTo !== pathname) redirect(redirectTo)
 
-  return <main className="flex-1 p-6">{children}</main>
+  // Only the nickname crosses to the client, never the account's email.
+  const protection = await getAccountProtection(userResult.value)
+  return (
+    <>
+      {protection.needsProtection ? <GuestAccountBanner nickname={protection.nickname} /> : null}
+      <main className="flex-1 p-6">{children}</main>
+    </>
+  )
 }

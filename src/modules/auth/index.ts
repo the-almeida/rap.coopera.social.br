@@ -50,4 +50,9 @@ export {
 } from './features/account-deletion/resolve-protected-redirect'
 
 export { completeOAuthSignIn } from './features/oauth-callback/oauth-callback.handler'
-export { oauthCallbackInputSchema } from './features/oauth-callback/oauth-callback.schema'
+export {
+  OAUTH_ORIGIN_PATHS,
+  oauthCallbackInputSchema,
+} from './features/oauth-callback/oauth-callback.schema'
+export { PROTECT_ACCOUNT_PATH } from './features/protect-account/paths'
+export { getAccountProtection } from './features/protect-account/account-protection'

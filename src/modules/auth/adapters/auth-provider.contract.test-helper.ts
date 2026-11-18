@@ -177,6 +177,51 @@ export function authProviderContract(name: string, subject: ContractSubject) {
       expect(await subject.accountExists(email)).toBe(false)
     })
 
+    it('moves an account to an email the server verified, and fails for one another account has', async () => {
+      const guestEmail = `guest_${randomUUID().slice(0, 8)}@guest.invalid`
+      const realEmail = newEmail('verified-email')
+      const takenEmail = newEmail('taken-email')
+      emails.push(guestEmail)
+      await subject.seedUser(takenEmail, PASSWORD)
+      const created = await subject
+        .newSession()
+        .createGuestUser({ email: guestEmail, password: PASSWORD, name: 'guest' })
+      if (!created.ok) throw new Error('setup: guest not created')
+      const session = subject.newSession()
+
+      const taken = await session.setVerifiedEmail({
+        userId: created.value.userId,
+        email: takenEmail,
+      })
+      const moved = await session.setVerifiedEmail({
+        userId: created.value.userId,
+        email: realEmail,
+      })
+
+      // @wc-test-auditor-allow: wide-mouth — Supabase's admin update answers a taken email with an untyped 500 (unique index); callers check first (protect-account.logic, takenByAnother)
+      expect(taken).toMatchObject({ ok: false })
+      expect(moved).toEqual({ ok: true, value: undefined })
+      // The password now goes with the new address, at once; the old one is gone.
+      expect(await session.probePassword({ email: realEmail, password: PASSWORD })).toMatchObject({
+        ok: true,
+      })
+      expect(await session.probePassword({ email: guestEmail, password: PASSWORD })).toMatchObject({
+        ok: false,
+        error: { code: 'UNAUTHENTICATED' },
+      })
+    })
+
+    it('lists the sign-in methods of the signed-in account, and none without a session', async () => {
+      const email = newEmail('identities')
+      await subject.seedUser(email, PASSWORD)
+      const session = subject.newSession()
+      expect(await session.getCurrentIdentityProviders()).toEqual([])
+
+      await session.signInWithPassword({ email, password: PASSWORD })
+
+      expect(await session.getCurrentIdentityProviders()).toEqual(['email'])
+    })
+
     it('rejects a wrong password', async () => {
       const email = newEmail('wrong-password')
       await subject.seedUser(email, PASSWORD)

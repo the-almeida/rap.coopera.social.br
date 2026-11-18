@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 
 import { db } from '@/shared/db/client'
 import { accountDeletionRequests, activeDeletionRequest } from '@/shared/db/schema/account-deletion'
@@ -38,6 +38,15 @@ export const userRepository = {
       .limit(1)
     if (!row) return null
     return rowToUser(row.user, row.scheduledFor ? { scheduledFor: row.scheduledFor } : null)
+  },
+  /** The account with this email, compared ignoring case. */
+  async findByEmail(email: string): Promise<{ id: UserId } | null> {
+    const [row] = await db
+      .select({ id: users.id })
+      .from(users)
+      .where(sql`lower(${users.email}) = lower(${email})`)
+      .limit(1)
+    return row ?? null
   },
   /** The account a guest nickname is reserved for, by its current email. */
   async findByGuestNickname(nickname: string): Promise<{ id: UserId; email: string } | null> {

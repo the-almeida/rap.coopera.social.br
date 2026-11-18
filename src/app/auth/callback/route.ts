@@ -2,8 +2,15 @@ import { NextResponse } from 'next/server'
 
 import { extractIpFromHeaders } from '@/shared/lib/http/request-ip'
 import { rateLimit } from '@/shared/lib/rate-limit'
+import { Events } from '@/shared/observability/analytics/events'
+import { track } from '@/shared/observability/analytics/track'
 
-import { completeOAuthSignIn, oauthCallbackInputSchema } from '@/modules/auth'
+import {
+  completeOAuthSignIn,
+  OAUTH_ORIGIN_PATHS,
+  oauthCallbackInputSchema,
+  PROTECT_ACCOUNT_PATH,
+} from '@/modules/auth'
 
 /**
  * OAuth callback. Providers (Google, Facebook) redirect here with
@@ -33,6 +40,14 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}/sign-in?error=too_many_attempts`)
   }
 
+  // The provider failed the sign-in or the link (denied consent, an account
+  // already linked elsewhere) and sent no code: back to where it started.
+  if (searchParams.has('error') && !searchParams.has('code')) {
+    const from = searchParams.get('from')
+    const back = OAUTH_ORIGIN_PATHS.find((path) => path === from) ?? '/sign-in'
+    return NextResponse.redirect(`${origin}${back}?error=oauth_failed`)
+  }
+
   const parsed = oauthCallbackInputSchema.safeParse({
     code: searchParams.get('code') ?? undefined,
     next: searchParams.get('next') ?? undefined,
@@ -53,5 +68,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${origin}${parsed.data.from}?error=oauth_failed`)
   }
 
+  // A guest linked Google or Facebook from the protect page.
+  if (parsed.data.from === PROTECT_ACCOUNT_PATH)
+    track(Events.ACCOUNT_PROTECTED, { method: 'oauth' })
   return NextResponse.redirect(`${origin}${parsed.data.next}`)
 }

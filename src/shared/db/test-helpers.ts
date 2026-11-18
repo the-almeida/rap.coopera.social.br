@@ -88,6 +88,36 @@ export async function createTestUser({
 }
 
 /**
+ * Creates a guest account the way the app does (admin API, guest marker,
+ * nickname reserved, password trusted). Callers clean up with
+ * `cleanupAuthUser(id)`.
+ */
+export async function createTestGuest(prefix = 'guest'): Promise<{
+  id: UserId
+  nickname: string
+  email: string
+  password: string
+}> {
+  const nickname = `${prefix}_${randomUUID().replaceAll('-', '').slice(0, 12)}`
+  const email = `${nickname}@guest.invalid`
+  const password = `pw-${randomUUID()}`
+  const { data, error } = await getAdminSupabase().auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { name: nickname },
+    app_metadata: { guest: true },
+  })
+  if (error || !data.user) throw error ?? new Error('guest not returned')
+  const id = UserIdSchema.parse(data.user.id)
+  await db
+    .update(users)
+    .set({ guestNickname: nickname, passwordVerifiedAt: new Date() })
+    .where(eq(users.id, id))
+  return { id, nickname, email, password }
+}
+
+/**
  * Marks the account's password as proven together with its mailbox, as the
  * verify-password step does. Seeds that stand in for an ordinary account
  * with a password call it; without it, Supabase Auth refuses password-only

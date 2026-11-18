@@ -61,6 +61,7 @@ jobs:
             echo "NEXT_PUBLIC_SUPABASE_ANON_KEY=$(echo "$STATUS" | jq -r '.ANON_KEY')"
             echo "SUPABASE_SERVICE_ROLE_KEY=$(echo "$STATUS" | jq -r '.SERVICE_ROLE_KEY')"
             echo "DATABASE_URL=$(echo "$STATUS" | jq -r '.DB_URL')"
+            echo "MAILPIT_URL=http://127.0.0.1:54324"
           } | tee -a "$GITHUB_ENV" > .env.local
 
       - name: Apply migrations

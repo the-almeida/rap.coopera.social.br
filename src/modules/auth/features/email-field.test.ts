@@ -3,6 +3,10 @@ import type { ZodType } from 'zod'
 
 import { GUEST_EMAIL_REJECTION_MESSAGE } from '../domain/guest'
 
+import {
+  requestGuestEmailSchema,
+  verifyGuestEmailSchema,
+} from './protect-account/protect-account.schema'
 import { requestSignInOtpSchema } from './request-sign-in-otp/request-sign-in-otp.schema'
 import { requestSignUpOtpSchema } from './request-sign-up-otp/request-sign-up-otp.schema'
 import { signInSchema } from './sign-in/sign-in.schema'
@@ -37,6 +41,8 @@ const schemas: Record<string, ZodType> = {
   requestSignUpOtpSchema,
   verifyOtpSchema,
   verifyPasswordSchema,
+  requestGuestEmailSchema,
+  verifyGuestEmailSchema,
 }
 
 function emailIssues(schema: ZodType, email: string) {

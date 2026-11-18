@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm'
-import { check, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
+import { check, integer, pgEnum, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core'
 
 import type { UserId } from '@/shared/lib/ids'
 
@@ -25,6 +25,21 @@ export const users = pgTable(
   },
   (table) => [check('users_name_not_blank', sql`btrim(${table.name}) <> ''`)],
 )
+
+// The pending code that adds an email to a guest account: one per account,
+// stored hashed, with its expiry and how many tries it has had. Only the app
+// reads it (RLS on, no API grants).
+export const guestEmailVerifications = pgTable('guest_email_verifications', {
+  userId: uuid('user_id')
+    .primaryKey()
+    .$type<UserId>()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  email: text('email').notNull(),
+  codeHash: text('code_hash').notNull(),
+  attempts: integer('attempts').notNull().default(0),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+})
 
 export type UserRow = typeof users.$inferSelect
 export type NewUserRow = typeof users.$inferInsert

@@ -29,3 +29,8 @@ export { signUp } from './features/sign-up/sign-up.handler'
 export { verifyOtp } from './features/verify-otp/verify-otp.handler'
 export { verifyPassword } from './features/verify-password/verify-password.handler'
 export { continueAsGuest } from './features/guest-account/continue-as-guest.handler'
+export {
+  requestGuestEmail,
+  verifyGuestEmail,
+} from './features/protect-account/protect-account.handler'
+export { PROTECT_ACCOUNT_PATH } from './features/protect-account/paths'

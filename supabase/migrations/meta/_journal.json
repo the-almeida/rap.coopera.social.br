@@ -64,6 +64,13 @@
       "when": 1794950832636,
       "tag": "20261117212712_add_users_guest_nickname",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794954885725,
+      "tag": "20261117223445_add_guest_email_verifications",
+      "breakpoints": true
     }
   ]
 }
