@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 
 import { db } from '@/shared/db/client'
 import { accountDeletionRequests, activeDeletionRequest } from '@/shared/db/schema/account-deletion'
@@ -47,6 +47,16 @@ export const userRepository = {
       .where(sql`lower(${users.email}) = lower(${email})`)
       .limit(1)
     return row ?? null
+  },
+  /** Id, name and email of each account that exists; unknown ids are skipped. */
+  async findProfilesByIds(
+    ids: readonly UserId[],
+  ): Promise<{ id: UserId; name: string; email: string }[]> {
+    if (ids.length === 0) return []
+    return db
+      .select({ id: users.id, name: users.name, email: users.email })
+      .from(users)
+      .where(inArray(users.id, [...ids]))
   },
   /** The account a guest nickname is reserved for, by its current email. */
   async findByGuestNickname(nickname: string): Promise<{ id: UserId; email: string } | null> {

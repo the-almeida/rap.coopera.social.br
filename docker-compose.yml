@@ -5,7 +5,7 @@
 # The app itself (`pnpm dev`) does not use it: without KV_* vars it rate-limits in memory.
 #
 # Start with `docker compose up -d` (bootstrap, dev and CI do this for you).
-name: wellcrafted-agentic-base
+name: rap-coopera-social-br
 
 services:
   redis:

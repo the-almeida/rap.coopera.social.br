@@ -2,7 +2,9 @@
 
 ## Project context
 
-`wellcrafted-agentic-base` is a production-ready Next.js boilerplate engineered for agentic coding with high quality standards. It is meant to be forked as the foundation for new projects.
+Batalhão (`rap.coopera.social.br`) runs rap battle leagues: organizers run battle nights (names, selection with crowd draws, 8/16 brackets, round-by-round crowd votes) and every MC keeps a public history across leagues. The approved product spec (roles, battle-night workflow, data model) is [`docs/mvp-spec.md`](./docs/mvp-spec.md); change it before changing the behavior it describes.
+
+It is built on [`wellcrafted-agentic-base`](https://github.com/the-almeida/wellcrafted-agentic-base) (git remote `upstream`), a production-ready Next.js boilerplate engineered for agentic coding. Boilerplate improvements are merged from `upstream`; keep platform changes (auth, db, shared) close to upstream so those merges stay easy.
 
 Stack: Next.js (App Router), TypeScript, Drizzle, Supabase (`@supabase/ssr`), Zod, Vitest, Playwright, Pino, Sentry, PostHog, Tailwind, shadcn/ui.
 

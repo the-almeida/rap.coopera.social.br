@@ -6,8 +6,10 @@ import { LegalFooter } from '@/shared/ui/legal-footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'wellcrafted-agentic-base',
-  description: 'Production-ready Next.js boilerplate engineered for agentic coding.',
+  // Pages set their own title and get "· Batalhão" appended.
+  title: { default: 'Batalhão, onde o RAP acontece', template: '%s · Batalhão' },
+  description:
+    'Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

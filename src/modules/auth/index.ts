@@ -30,6 +30,8 @@ export { isGuestAccount } from './domain/guest'
 
 export { getOptionalUser } from './get-optional-user'
 export { requireUser, type Allowance } from './require-user'
+export { AccountLoginSchema, type AccountLogin } from './domain/login'
+export { findUserProfileByLogin, getUserProfiles, type UserProfile } from './user-directory'
 
 export { updateSession } from './adapters/supabase/update-session'
 export { warnOnAuthMisconfiguration } from './warn-on-auth-misconfiguration'

@@ -1,0 +1,1553 @@
+{
+  "id": "d6cce01d-f4bc-402d-ad84-72ef3532e9a5",
+  "prevId": "080b1693-4f34-450d-b348-4b7879ec37cb",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.account_deletion_requests": {
+      "name": "account_deletion_requests",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "requested_at": {
+          "name": "requested_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "scheduled_for": {
+          "name": "scheduled_for",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cancelled_at": {
+          "name": "cancelled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "source": {
+          "name": "source",
+          "type": "account_deletion_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "confirmation_code": {
+          "name": "confirmation_code",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "account_deletion_requests_active_user_idx": {
+          "name": "account_deletion_requests_active_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"account_deletion_requests\".\"cancelled_at\" IS NULL AND \"account_deletion_requests\".\"completed_at\" IS NULL",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "account_deletion_requests_user_id_users_id_fk": {
+          "name": "account_deletion_requests_user_id_users_id_fk",
+          "tableFrom": "account_deletion_requests",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "account_deletion_requests_confirmation_code_unique": {
+          "name": "account_deletion_requests_confirmation_code_unique",
+          "nullsNotDistinct": false,
+          "columns": ["confirmation_code"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.guest_email_verifications": {
+      "name": "guest_email_verifications",
+      "schema": "",
+      "columns": {
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "code_hash": {
+          "name": "code_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "guest_email_verifications_user_id_users_id_fk": {
+          "name": "guest_email_verifications_user_id_users_id_fk",
+          "tableFrom": "guest_email_verifications",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.users": {
+      "name": "users",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "user_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'user'"
+        },
+        "password_verified_at": {
+          "name": "password_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "guest_nickname": {
+          "name": "guest_nickname",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "users_guest_nickname_unique": {
+          "name": "users_guest_nickname_unique",
+          "nullsNotDistinct": false,
+          "columns": ["guest_nickname"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "users_name_not_blank": {
+          "name": "users_name_not_blank",
+          "value": "btrim(\"users\".\"name\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.battle_rounds": {
+      "name": "battle_rounds",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "battle_id": {
+          "name": "battle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "round_no": {
+          "name": "round_no",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "votes_a": {
+          "name": "votes_a",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "votes_b": {
+          "name": "votes_b",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "recorded_by": {
+          "name": "recorded_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "battle_rounds_battle_id_battles_id_fk": {
+          "name": "battle_rounds_battle_id_battles_id_fk",
+          "tableFrom": "battle_rounds",
+          "tableTo": "battles",
+          "columnsFrom": ["battle_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "battle_rounds_recorded_by_users_id_fk": {
+          "name": "battle_rounds_recorded_by_users_id_fk",
+          "tableFrom": "battle_rounds",
+          "tableTo": "users",
+          "columnsFrom": ["recorded_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "battle_rounds_battle_round_unique": {
+          "name": "battle_rounds_battle_round_unique",
+          "nullsNotDistinct": false,
+          "columns": ["battle_id", "round_no"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "battle_rounds_round_no_range": {
+          "name": "battle_rounds_round_no_range",
+          "value": "\"battle_rounds\".\"round_no\" BETWEEN 1 AND 3"
+        },
+        "battle_rounds_votes_non_negative": {
+          "name": "battle_rounds_votes_non_negative",
+          "value": "\"battle_rounds\".\"votes_a\" >= 0 AND \"battle_rounds\".\"votes_b\" >= 0"
+        },
+        "battle_rounds_no_tie": {
+          "name": "battle_rounds_no_tie",
+          "value": "\"battle_rounds\".\"votes_a\" <> \"battle_rounds\".\"votes_b\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.battles": {
+      "name": "battles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "edition_id": {
+          "name": "edition_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phase": {
+          "name": "phase",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_a_id": {
+          "name": "entry_a_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entry_b_id": {
+          "name": "entry_b_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "winner_entry_id": {
+          "name": "winner_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "battles_entry_a_id_idx": {
+          "name": "battles_entry_a_id_idx",
+          "columns": [
+            {
+              "expression": "entry_a_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "battles_entry_b_id_idx": {
+          "name": "battles_entry_b_id_idx",
+          "columns": [
+            {
+              "expression": "entry_b_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "battles_edition_id_editions_id_fk": {
+          "name": "battles_edition_id_editions_id_fk",
+          "tableFrom": "battles",
+          "tableTo": "editions",
+          "columnsFrom": ["edition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "battles_entry_a_fk": {
+          "name": "battles_entry_a_fk",
+          "tableFrom": "battles",
+          "tableTo": "edition_entries",
+          "columnsFrom": ["edition_id", "entry_a_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "battles_entry_b_fk": {
+          "name": "battles_entry_b_fk",
+          "tableFrom": "battles",
+          "tableTo": "edition_entries",
+          "columnsFrom": ["edition_id", "entry_b_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "battles_edition_phase_position_unique": {
+          "name": "battles_edition_phase_position_unique",
+          "nullsNotDistinct": false,
+          "columns": ["edition_id", "phase", "position"]
+        },
+        "battles_edition_id_unique": {
+          "name": "battles_edition_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["edition_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "battles_phase_positive": {
+          "name": "battles_phase_positive",
+          "value": "\"battles\".\"phase\" > 0"
+        },
+        "battles_position_positive": {
+          "name": "battles_position_positive",
+          "value": "\"battles\".\"position\" > 0"
+        },
+        "battles_distinct_entries": {
+          "name": "battles_distinct_entries",
+          "value": "\"battles\".\"entry_a_id\" IS NULL OR \"battles\".\"entry_b_id\" IS NULL OR \"battles\".\"entry_a_id\" <> \"battles\".\"entry_b_id\""
+        },
+        "battles_winner_in_battle": {
+          "name": "battles_winner_in_battle",
+          "value": "\"battles\".\"winner_entry_id\" IS NULL OR \"battles\".\"winner_entry_id\" = \"battles\".\"entry_a_id\" OR \"battles\".\"winner_entry_id\" = \"battles\".\"entry_b_id\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.crowd_draw_tickets": {
+      "name": "crowd_draw_tickets",
+      "schema": "",
+      "columns": {
+        "edition_id": {
+          "name": "edition_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "draw_id": {
+          "name": "draw_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_id": {
+          "name": "entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "picked": {
+          "name": "picked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "crowd_draw_tickets_draw_fk": {
+          "name": "crowd_draw_tickets_draw_fk",
+          "tableFrom": "crowd_draw_tickets",
+          "tableTo": "crowd_draws",
+          "columnsFrom": ["edition_id", "draw_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "crowd_draw_tickets_entry_fk": {
+          "name": "crowd_draw_tickets_entry_fk",
+          "tableFrom": "crowd_draw_tickets",
+          "tableTo": "edition_entries",
+          "columnsFrom": ["edition_id", "entry_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "crowd_draw_tickets_draw_id_entry_id_pk": {
+          "name": "crowd_draw_tickets_draw_id_entry_id_pk",
+          "columns": ["draw_id", "entry_id"]
+        }
+      },
+      "uniqueConstraints": {
+        "crowd_draw_tickets_draw_number_unique": {
+          "name": "crowd_draw_tickets_draw_number_unique",
+          "nullsNotDistinct": false,
+          "columns": ["draw_id", "number"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "crowd_draw_tickets_number_positive": {
+          "name": "crowd_draw_tickets_number_positive",
+          "value": "\"crowd_draw_tickets\".\"number\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.crowd_draws": {
+      "name": "crowd_draws",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "edition_id": {
+          "name": "edition_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "crowd_draw_reason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slots": {
+          "name": "slots",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "completed_at": {
+          "name": "completed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "crowd_draws_edition_id_editions_id_fk": {
+          "name": "crowd_draws_edition_id_editions_id_fk",
+          "tableFrom": "crowd_draws",
+          "tableTo": "editions",
+          "columnsFrom": ["edition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "crowd_draws_created_by_users_id_fk": {
+          "name": "crowd_draws_created_by_users_id_fk",
+          "tableFrom": "crowd_draws",
+          "tableTo": "users",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "crowd_draws_edition_id_unique": {
+          "name": "crowd_draws_edition_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["edition_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "crowd_draws_slots_positive": {
+          "name": "crowd_draws_slots_positive",
+          "value": "\"crowd_draws\".\"slots\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.edition_entries": {
+      "name": "edition_entries",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "edition_id": {
+          "name": "edition_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "vulgo_id": {
+          "name": "vulgo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "entry_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'registered'"
+        },
+        "selected_by": {
+          "name": "selected_by",
+          "type": "entry_selection",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "edition_entries_vulgo_id_idx": {
+          "name": "edition_entries_vulgo_id_idx",
+          "columns": [
+            {
+              "expression": "vulgo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "edition_entries_edition_id_editions_id_fk": {
+          "name": "edition_entries_edition_id_editions_id_fk",
+          "tableFrom": "edition_entries",
+          "tableTo": "editions",
+          "columnsFrom": ["edition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "edition_entries_vulgo_id_vulgos_id_fk": {
+          "name": "edition_entries_vulgo_id_vulgos_id_fk",
+          "tableFrom": "edition_entries",
+          "tableTo": "vulgos",
+          "columnsFrom": ["vulgo_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "edition_entries_edition_vulgo_unique": {
+          "name": "edition_entries_edition_vulgo_unique",
+          "nullsNotDistinct": false,
+          "columns": ["edition_id", "vulgo_id"]
+        },
+        "edition_entries_edition_id_unique": {
+          "name": "edition_entries_edition_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["edition_id", "id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "edition_entries_number_positive": {
+          "name": "edition_entries_number_positive",
+          "value": "\"edition_entries\".\"number\" > 0"
+        },
+        "edition_entries_selected_by_consistency": {
+          "name": "edition_entries_selected_by_consistency",
+          "value": "(\"edition_entries\".\"selected_by\" IS NOT NULL) = (\"edition_entries\".\"status\" IN ('selected', 'withdrew'))"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.editions": {
+      "name": "editions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "league_id": {
+          "name": "league_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "number": {
+          "name": "number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "event_date": {
+          "name": "event_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "edition_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'registration'"
+        },
+        "bracket_size": {
+          "name": "bracket_size",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "editions_league_event_date_idx": {
+          "name": "editions_league_event_date_idx",
+          "columns": [
+            {
+              "expression": "league_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "event_date",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "editions_league_id_leagues_id_fk": {
+          "name": "editions_league_id_leagues_id_fk",
+          "tableFrom": "editions",
+          "tableTo": "leagues",
+          "columnsFrom": ["league_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "editions_league_number_unique": {
+          "name": "editions_league_number_unique",
+          "nullsNotDistinct": false,
+          "columns": ["league_id", "number"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "editions_number_positive": {
+          "name": "editions_number_positive",
+          "value": "\"editions\".\"number\" > 0"
+        },
+        "editions_bracket_size_valid": {
+          "name": "editions_bracket_size_valid",
+          "value": "\"editions\".\"bracket_size\" IS NULL OR \"editions\".\"bracket_size\" IN (8, 16)"
+        },
+        "editions_bracket_size_after_registration": {
+          "name": "editions_bracket_size_after_registration",
+          "value": "\"editions\".\"status\" IN ('registration', 'cancelled') OR \"editions\".\"bracket_size\" IS NOT NULL"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.withdrawals": {
+      "name": "withdrawals",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "edition_id": {
+          "name": "edition_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entry_id": {
+          "name": "entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "battle_id": {
+          "name": "battle_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "replacement_entry_id": {
+          "name": "replacement_entry_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "method": {
+          "name": "method",
+          "type": "withdrawal_method",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "crowd_draw_id": {
+          "name": "crowd_draw_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recorded_by": {
+          "name": "recorded_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "recorded_at": {
+          "name": "recorded_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "withdrawals_edition_id_editions_id_fk": {
+          "name": "withdrawals_edition_id_editions_id_fk",
+          "tableFrom": "withdrawals",
+          "tableTo": "editions",
+          "columnsFrom": ["edition_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "withdrawals_recorded_by_users_id_fk": {
+          "name": "withdrawals_recorded_by_users_id_fk",
+          "tableFrom": "withdrawals",
+          "tableTo": "users",
+          "columnsFrom": ["recorded_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "withdrawals_entry_fk": {
+          "name": "withdrawals_entry_fk",
+          "tableFrom": "withdrawals",
+          "tableTo": "edition_entries",
+          "columnsFrom": ["edition_id", "entry_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "withdrawals_battle_fk": {
+          "name": "withdrawals_battle_fk",
+          "tableFrom": "withdrawals",
+          "tableTo": "battles",
+          "columnsFrom": ["edition_id", "battle_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "withdrawals_replacement_entry_fk": {
+          "name": "withdrawals_replacement_entry_fk",
+          "tableFrom": "withdrawals",
+          "tableTo": "edition_entries",
+          "columnsFrom": ["edition_id", "replacement_entry_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "withdrawals_crowd_draw_fk": {
+          "name": "withdrawals_crowd_draw_fk",
+          "tableFrom": "withdrawals",
+          "tableTo": "crowd_draws",
+          "columnsFrom": ["edition_id", "crowd_draw_id"],
+          "columnsTo": ["edition_id", "id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "withdrawals_entry_id_unique": {
+          "name": "withdrawals_entry_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["entry_id"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "withdrawals_replacement_differs": {
+          "name": "withdrawals_replacement_differs",
+          "value": "\"withdrawals\".\"replacement_entry_id\" IS NULL OR \"withdrawals\".\"replacement_entry_id\" <> \"withdrawals\".\"entry_id\""
+        },
+        "withdrawals_method_consistency": {
+          "name": "withdrawals_method_consistency",
+          "value": "CASE \"withdrawals\".\"method\"\n        WHEN 'walkover' THEN \"withdrawals\".\"replacement_entry_id\" IS NULL AND \"withdrawals\".\"crowd_draw_id\" IS NULL\n        WHEN 'previous_opponent' THEN \"withdrawals\".\"replacement_entry_id\" IS NOT NULL AND \"withdrawals\".\"crowd_draw_id\" IS NULL\n        WHEN 'crowd_draw' THEN \"withdrawals\".\"crowd_draw_id\" IS NOT NULL\n      END"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.league_organizers": {
+      "name": "league_organizers",
+      "schema": "",
+      "columns": {
+        "league_id": {
+          "name": "league_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "added_by": {
+          "name": "added_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "league_organizers_user_id_idx": {
+          "name": "league_organizers_user_id_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "league_organizers_league_id_leagues_id_fk": {
+          "name": "league_organizers_league_id_leagues_id_fk",
+          "tableFrom": "league_organizers",
+          "tableTo": "leagues",
+          "columnsFrom": ["league_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "league_organizers_user_id_users_id_fk": {
+          "name": "league_organizers_user_id_users_id_fk",
+          "tableFrom": "league_organizers",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "league_organizers_added_by_users_id_fk": {
+          "name": "league_organizers_added_by_users_id_fk",
+          "tableFrom": "league_organizers",
+          "tableTo": "users",
+          "columnsFrom": ["added_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {
+        "league_organizers_league_id_user_id_pk": {
+          "name": "league_organizers_league_id_user_id_pk",
+          "columns": ["league_id", "user_id"]
+        }
+      },
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.leagues": {
+      "name": "leagues",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "leagues_created_by_users_id_fk": {
+          "name": "leagues_created_by_users_id_fk",
+          "tableFrom": "leagues",
+          "tableTo": "users",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "leagues_slug_unique": {
+          "name": "leagues_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "leagues_name_not_blank": {
+          "name": "leagues_name_not_blank",
+          "value": "btrim(\"leagues\".\"name\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.mc_profiles": {
+      "name": "mc_profiles",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "mc_profiles_user_id_users_id_fk": {
+          "name": "mc_profiles_user_id_users_id_fk",
+          "tableFrom": "mc_profiles",
+          "tableTo": "users",
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "mc_profiles_user_id_unique": {
+          "name": "mc_profiles_user_id_unique",
+          "nullsNotDistinct": false,
+          "columns": ["user_id"]
+        },
+        "mc_profiles_slug_unique": {
+          "name": "mc_profiles_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.vulgo_claims": {
+      "name": "vulgo_claims",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "vulgo_id": {
+          "name": "vulgo_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mc_profile_id": {
+          "name": "mc_profile_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "vulgo_claim_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vulgo_claims_pending_idx": {
+          "name": "vulgo_claims_pending_idx",
+          "columns": [
+            {
+              "expression": "vulgo_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "mc_profile_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"vulgo_claims\".\"status\" = 'pending'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "vulgo_claims_mc_profile_id_idx": {
+          "name": "vulgo_claims_mc_profile_id_idx",
+          "columns": [
+            {
+              "expression": "mc_profile_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vulgo_claims_vulgo_id_vulgos_id_fk": {
+          "name": "vulgo_claims_vulgo_id_vulgos_id_fk",
+          "tableFrom": "vulgo_claims",
+          "tableTo": "vulgos",
+          "columnsFrom": ["vulgo_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "vulgo_claims_mc_profile_id_mc_profiles_id_fk": {
+          "name": "vulgo_claims_mc_profile_id_mc_profiles_id_fk",
+          "tableFrom": "vulgo_claims",
+          "tableTo": "mc_profiles",
+          "columnsFrom": ["mc_profile_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "vulgo_claims_decided_by_users_id_fk": {
+          "name": "vulgo_claims_decided_by_users_id_fk",
+          "tableFrom": "vulgo_claims",
+          "tableTo": "users",
+          "columnsFrom": ["decided_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {
+        "vulgo_claims_decided_consistency": {
+          "name": "vulgo_claims_decided_consistency",
+          "value": "(\"vulgo_claims\".\"status\" = 'pending') = (\"vulgo_claims\".\"decided_at\" IS NULL)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.vulgos": {
+      "name": "vulgos",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "mc_profile_id": {
+          "name": "mc_profile_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "vulgos_mc_profile_id_idx": {
+          "name": "vulgos_mc_profile_id_idx",
+          "columns": [
+            {
+              "expression": "mc_profile_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "vulgos_mc_profile_id_mc_profiles_id_fk": {
+          "name": "vulgos_mc_profile_id_mc_profiles_id_fk",
+          "tableFrom": "vulgos",
+          "tableTo": "mc_profiles",
+          "columnsFrom": ["mc_profile_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "vulgos_created_by_users_id_fk": {
+          "name": "vulgos_created_by_users_id_fk",
+          "tableFrom": "vulgos",
+          "tableTo": "users",
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "vulgos_slug_unique": {
+          "name": "vulgos_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": ["slug"]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {
+        "vulgos_name_not_blank": {
+          "name": "vulgos_name_not_blank",
+          "value": "btrim(\"vulgos\".\"name\") <> ''"
+        }
+      },
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.account_deletion_source": {
+      "name": "account_deletion_source",
+      "schema": "public",
+      "values": ["user", "facebook"]
+    },
+    "public.user_role": {
+      "name": "user_role",
+      "schema": "public",
+      "values": ["user", "admin"]
+    },
+    "public.crowd_draw_reason": {
+      "name": "crowd_draw_reason",
+      "schema": "public",
+      "values": ["selection", "replacement"]
+    },
+    "public.edition_status": {
+      "name": "edition_status",
+      "schema": "public",
+      "values": ["registration", "selection", "in_progress", "completed", "cancelled"]
+    },
+    "public.entry_selection": {
+      "name": "entry_selection",
+      "schema": "public",
+      "values": ["arrival", "draw", "replacement"]
+    },
+    "public.entry_status": {
+      "name": "entry_status",
+      "schema": "public",
+      "values": ["registered", "selected", "not_selected", "withdrew"]
+    },
+    "public.withdrawal_method": {
+      "name": "withdrawal_method",
+      "schema": "public",
+      "values": ["crowd_draw", "previous_opponent", "walkover"]
+    },
+    "public.vulgo_claim_status": {
+      "name": "vulgo_claim_status",
+      "schema": "public",
+      "values": ["pending", "approved", "rejected"]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

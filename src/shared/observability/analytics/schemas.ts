@@ -26,6 +26,17 @@ export const eventSchemas = {
     ]),
     feature: z.string(),
   }),
+  [Events.LEAGUE_CREATED]: z.object({}),
+  [Events.BRACKET_DRAWN]: z.object({
+    bracketSize: z.union([z.literal(8), z.literal(16)]),
+    entries: z.number().int().positive(),
+  }),
+  [Events.EDITION_COMPLETED]: z.object({
+    bracketSize: z.union([z.literal(8), z.literal(16)]),
+  }),
+  [Events.VULGO_CLAIM_DECIDED]: z.object({
+    decision: z.enum(['approved', 'rejected']),
+  }),
 } as const
 
 export type EventPayload<E extends keyof typeof eventSchemas> = z.infer<(typeof eventSchemas)[E]>
