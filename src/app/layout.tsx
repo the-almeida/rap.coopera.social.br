@@ -7,7 +7,7 @@ import './globals.css'
 
 export const metadata: Metadata = {
   // Pages set their own title and get "· Batalhão" appended.
-  title: { default: 'Batalhão', template: '%s · Batalhão' },
+  title: { default: 'Batalhão, onde o RAP acontece', template: '%s · Batalhão' },
   description:
     'Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.',
 }
