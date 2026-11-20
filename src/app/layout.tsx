@@ -6,7 +6,8 @@ import { LegalFooter } from '@/shared/ui/legal-footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'rap.coopera.social.br',
+  // Pages set their own title and get "· Batalhão" appended.
+  title: { default: 'Batalhão', template: '%s · Batalhão' },
   description:
     'Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.',
 }

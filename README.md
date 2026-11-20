@@ -1,10 +1,10 @@
-# rap.coopera.social.br
+# Batalhão
 
 > Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.
 
 ## What
 
-Organizers run battle nights (names, selection with crowd draws, 8/16 brackets, round-by-round crowd votes) and every MC keeps a public history of their results across leagues. The approved product spec, including roles, the battle-night workflow and the data model, is [`docs/mvp-spec.md`](docs/mvp-spec.md); change it before changing the behavior it describes.
+Batalhão runs at [rap.coopera.social.br](https://rap.coopera.social.br). Organizers run battle nights (names, selection with crowd draws, 8/16 brackets, round-by-round crowd votes) and every MC keeps a public history of their results across leagues. The approved product spec, including roles, the battle-night workflow and the data model, is [`docs/mvp-spec.md`](docs/mvp-spec.md); change it before changing the behavior it describes.
 
 Built on [wellcrafted-agentic-base](https://github.com/the-almeida/wellcrafted-agentic-base), a production-ready Next.js boilerplate engineered for agentic coding: every rule is enforced (boundaries, types, tests, commits) so the agent stays inside the lines and the human stays in flow. It is the `upstream` remote; boilerplate improvements are merged from there:
 

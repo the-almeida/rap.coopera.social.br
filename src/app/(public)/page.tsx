@@ -3,7 +3,7 @@ import Link from 'next/link'
 export default function HomePage() {
   return (
     <section className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-6 py-24">
-      <h1 className="text-center text-4xl font-bold tracking-tight">rap.coopera.social.br</h1>
+      <h1 className="text-center text-4xl font-bold tracking-tight">Batalhão</h1>
       <p className="text-muted-foreground max-w-prose text-center text-lg">
         Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.
       </p>
