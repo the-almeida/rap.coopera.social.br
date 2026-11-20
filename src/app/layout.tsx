@@ -6,8 +6,9 @@ import { LegalFooter } from '@/shared/ui/legal-footer'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'wellcrafted-agentic-base',
-  description: 'Production-ready Next.js boilerplate engineered for agentic coding.',
+  title: 'rap.coopera.social.br',
+  description:
+    'Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

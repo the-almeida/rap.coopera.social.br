@@ -2,7 +2,7 @@
 
 ## Three patterns combined
 
-`wellcrafted-agentic-base` combines three patterns, each solving a different scale:
+This codebase combines three patterns, each solving a different scale:
 
 1. **Modular Monolith** — boundaries between domains
 2. **Vertical Slice** — organization within a module
