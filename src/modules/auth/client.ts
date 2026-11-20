@@ -18,6 +18,7 @@
 
 export { OAUTH_PROVIDER_NAME, type OAuthProvider } from './domain/oauth-providers'
 export type { Role, User } from './domain/user'
+export { AccountLoginSchema, type AccountLogin } from './domain/login'
 
 export { createSupabaseBrowserClient } from './adapters/supabase/browser-client'
 
