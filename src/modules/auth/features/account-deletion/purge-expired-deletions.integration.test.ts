@@ -2,7 +2,14 @@ import { eq, inArray, sql } from 'drizzle-orm'
 import { afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import { db } from '@/shared/db/client'
-import { accountDeletionRequests, exampleEntities, users } from '@/shared/db/schema'
+import {
+  accountDeletionRequests,
+  leagueOrganizers,
+  leagues,
+  mcProfiles,
+  users,
+  vulgos,
+} from '@/shared/db/schema'
 import { cleanupAuthUser, getAdminSupabase, uniqueTestEmail } from '@/shared/db/test-helpers'
 import {
   AccountDeletionRequestIdSchema,
@@ -66,27 +73,60 @@ describe('purge_expired_account_deletions()', () => {
 
   it('deletes the user and marks the request completed when scheduled_for has passed', async () => {
     const userId = await seedUser('expired')
-    await db.insert(exampleEntities).values({ userId, title: 'cascade-target', description: null })
+    const [league] = await db
+      .insert(leagues)
+      .values({ name: 'Purge League', slug: `purge-${userId}`, createdBy: userId })
+      .returning()
+    await db.insert(leagueOrganizers).values({ leagueId: league!.id, userId })
+    const [profile] = await db
+      .insert(mcProfiles)
+      .values({ userId, slug: `purge-mc-${userId}` })
+      .returning()
+    const [vulgo] = await db
+      .insert(vulgos)
+      .values({
+        name: 'Purge MC',
+        slug: `purge-vulgo-${userId}`,
+        mcProfileId: profile!.id,
+        createdBy: userId,
+      })
+      .returning()
     const request = await seedExpiredRequest(userId)
 
-    await runPurge()
+    try {
+      await runPurge()
 
-    const remainingUser = await db.select().from(users).where(eq(users.id, userId))
-    expect(remainingUser).toHaveLength(0)
+      const remainingUser = await db.select().from(users).where(eq(users.id, userId))
+      expect(remainingUser).toHaveLength(0)
 
-    const cascadeRows = await db
-      .select()
-      .from(exampleEntities)
-      .where(eq(exampleEntities.userId, userId))
-    expect(cascadeRows).toHaveLength(0)
+      // User-owned rows cascade away...
+      const seats = await db
+        .select()
+        .from(leagueOrganizers)
+        .where(eq(leagueOrganizers.userId, userId))
+      expect(seats).toHaveLength(0)
+      expect(await db.select().from(mcProfiles).where(eq(mcProfiles.userId, userId))).toHaveLength(
+        0,
+      )
 
-    const [updatedRequest] = await db
-      .select()
-      .from(accountDeletionRequests)
-      .where(eq(accountDeletionRequests.id, request.id))
-    expect(updatedRequest).toBeDefined()
-    expect(updatedRequest!.completedAt).not.toBeNull()
-    expect(updatedRequest!.userId).toBeNull()
+      // ...but the league survives, and the vulgo (with its battle history)
+      // falls back to unclaimed.
+      const [survivingLeague] = await db.select().from(leagues).where(eq(leagues.id, league!.id))
+      expect(survivingLeague?.createdBy).toBeNull()
+      const [survivingVulgo] = await db.select().from(vulgos).where(eq(vulgos.id, vulgo!.id))
+      expect(survivingVulgo).toMatchObject({ mcProfileId: null, createdBy: null })
+
+      const [updatedRequest] = await db
+        .select()
+        .from(accountDeletionRequests)
+        .where(eq(accountDeletionRequests.id, request.id))
+      expect(updatedRequest).toBeDefined()
+      expect(updatedRequest!.completedAt).not.toBeNull()
+      expect(updatedRequest!.userId).toBeNull()
+    } finally {
+      await db.delete(leagues).where(eq(leagues.id, league!.id))
+      await db.delete(vulgos).where(eq(vulgos.id, vulgo!.id))
+    }
   })
 
   it('is a no-op when no requests have expired', async () => {

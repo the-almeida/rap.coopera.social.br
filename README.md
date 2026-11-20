@@ -1,12 +1,17 @@
-# wellcrafted-agentic-base
+# rap.coopera.social.br
 
-> Production-ready Next.js boilerplate engineered for agentic coding with high quality standards.
+> Ligas de batalha de rima: chaveamento, votação da plateia e o histórico de cada MC.
 
 ## What
 
-`wellcrafted-agentic-base` is the foundation you fork to start a new project. It enforces the architecture, conventions, and tooling that let you ship fast without sacrificing quality. It is opinionated by design.
+Organizers run battle nights (names, selection with crowd draws, 8/16 brackets, round-by-round crowd votes) and every MC keeps a public history of their results across leagues. The approved product spec, including roles, the battle-night workflow and the data model, is [`docs/mvp-spec.md`](docs/mvp-spec.md); change it before changing the behavior it describes.
 
-The repo is engineered around a tight feedback loop with coding agents: every rule is enforced (boundaries, types, tests, commits) so the agent stays inside the lines and the human stays in flow.
+Built on [wellcrafted-agentic-base](https://github.com/the-almeida/wellcrafted-agentic-base), a production-ready Next.js boilerplate engineered for agentic coding: every rule is enforced (boundaries, types, tests, commits) so the agent stays inside the lines and the human stays in flow. It is the `upstream` remote; boilerplate improvements are merged from there:
+
+```bash
+git remote add upstream git@github.com:the-almeida/wellcrafted-agentic-base.git  # once
+git fetch upstream && git merge upstream/main
+```
 
 ## Quick Start
 
@@ -14,7 +19,7 @@ Required: Node 22+, pnpm 11+, Docker, jq. The Supabase CLI is installed automati
 
 ```bash
 git clone <repo>
-cd wellcrafted-agentic-base
+cd rap.coopera.social.br
 pnpm bootstrap
 pnpm dev
 ```
@@ -113,4 +118,9 @@ See [docs/conventions.md](./docs/conventions.md).
 - [docs/conventions.md](./docs/conventions.md) — code conventions
 - [docs/dod.md](./docs/dod.md) — Definition of Done
 - [docs/deployment.md](./docs/deployment.md) — production setup (Vercel + Supabase)
+- [docs/mvp-spec.md](./docs/mvp-spec.md) — product spec: roles, battle night, data model
 - [docs/adr/](./docs/adr) — architecture decision records
+
+## License
+
+[MIT](./LICENSE)

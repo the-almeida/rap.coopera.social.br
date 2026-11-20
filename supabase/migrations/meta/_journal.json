@@ -71,6 +71,20 @@
       "when": 1794954885725,
       "tag": "20261117223445_add_guest_email_verifications",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795212240249,
+      "tag": "20261120220400_drop_example_entities",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1795212244154,
+      "tag": "20261120220404_add_battle_leagues",
+      "breakpoints": true
     }
   ]
 }

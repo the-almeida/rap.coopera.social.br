@@ -50,14 +50,14 @@ describe('public schema exposure', () => {
     const signIn = await client.auth.signInWithPassword({ email: seeded.email, password })
     if (signIn.error) throw signIn.error
 
-    const { error } = await client
-      .from('example_entities')
-      .insert({ user_id: seeded.id, title: 'Written past the app' })
+    const { error } = await client.from('leagues').insert({
+      name: 'Written past the app',
+      slug: `rest-write-${seeded.id}`,
+      created_by: seeded.id,
+    })
 
     expect(error).not.toBeNull()
-    const rows = await db.execute(
-      sql`SELECT 1 FROM public.example_entities WHERE user_id = ${seeded.id}`,
-    )
+    const rows = await db.execute(sql`SELECT 1 FROM public.leagues WHERE created_by = ${seeded.id}`)
     expect(rows).toHaveLength(0)
   })
 

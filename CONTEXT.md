@@ -37,3 +37,27 @@ This file holds the project's shared vocabulary. Terms here are canonical — co
 **protect (a guest account)** — Give it a way back: add a verified email (the app's own emailed code) or link Google or Facebook. Until then a banner on every protected page asks for it.
 
 **evasive test** — A test containing steps or assertions that exist only to bypass a failing path (filling a field the code under test does not read, swallowing an expected exception with a generic catch, asserting absence of an element that was never going to render, sleeping instead of waiting on a real signal) rather than letting the failure surface the underlying bug. Detected by `@wc-test-auditor`, which runs from `/wc-tdd` after each GREEN. Findings are either resolved by editing the test or overridden inline with `// @wc-test-auditor-allow: <heuristic-id> — <reason>`. Distinct from "flaky test" (nondeterminism) and "brittle test" (over-coupled to implementation).
+
+### Battle leagues
+
+Full rules in [docs/mvp-spec.md](./docs/mvp-spec.md); these are the words they use.
+
+**MC** — Every account. Gets an **MC profile** the first time an MC-facing feature needs one; its sign-up name (a guest's nickname) becomes its first **vulgo**.
+
+**vulgo** — An MC's stage name, and what battles point at (not the account), so a night can run with names nobody has claimed. Accent and case variants are the same vulgo (one slug). Unclaimed until an MC owns it.
+
+**vulgo claim** — An MC's request to own an unclaimed vulgo. Admins, or organizers of a league where the vulgo battled, approve or reject it. A sign-up whose name matches a vulgo with history opens a claim instead of taking it.
+
+**league** — Created by an admin, run by its **organizers** (MCs the admin added; all equals, no owner). An organizer may battle in their own league.
+
+**edition** — One battle night of a league, numbered per league. Status: registration → selection → in progress → completed (or cancelled).
+
+**entry** — A vulgo on an edition's list, numbered by arrival. Selected by arrival, by **crowd draw**, or as a replacement.
+
+**crowd draw** — The secret list that gives the MCs left over after selection random numbers 1..X; the crowd calls numbers and the organizer enters the picks. Only organizers and admins ever see it.
+
+**bracket** — 8 or 16 selected entries, paired at random; redrawable until the first round is recorded.
+
+**round** — One crowd vote between the two MCs of a battle. First to two rounds wins the battle; tied counts are refused (the organizer casts the tiebreaker vote).
+
+**withdrawal** — An MC leaving an edition: replaced by a new crowd draw (before their first battle), by the MC they last beat (after a win), or by a walkover for the opponent.
