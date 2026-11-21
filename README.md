@@ -28,6 +28,8 @@ App runs at http://localhost:3000.
 
 `pnpm bootstrap` installs dependencies, starts the local Supabase stack (Postgres, Auth, Mailpit) in Docker, applies every migration, and writes `.env.local` with the local Supabase URL, keys, and `DATABASE_URL`. Run it once; afterwards `pnpm dev` is enough.
 
+No Docker or no internet (Linux x64): the same commands detect it and run the [offline stack](./offline/README.md), the same services from vendored binaries on the same ports.
+
 Useful local URLs (exact ports: `pnpm supabase:status`):
 
 - Supabase Studio: http://localhost:54323

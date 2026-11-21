@@ -8,3 +8,6 @@
 *.bat text eol=crlf
 *.cmd text eol=crlf
 *.ps1 text eol=crlf
+
+# Vendored archives of the offline stack: never diffed or converted.
+offline/vendor/*.tar.* binary
