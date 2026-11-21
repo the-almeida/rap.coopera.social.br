@@ -4,8 +4,8 @@ import { createLeagueSchema } from './create-league.schema'
 
 describe('createLeagueSchema', () => {
   it('accepts a name, trimmed', () => {
-    expect(createLeagueSchema.parse({ name: '  Batalha da Aldeia ' }).name).toBe(
-      'Batalha da Aldeia',
+    expect(createLeagueSchema.parse({ name: '  Batalha da Esquina Fictícia ' }).name).toBe(
+      'Batalha da Esquina Fictícia',
     )
   })
 

@@ -120,8 +120,8 @@ afterAll(async () => {
 
 describe('battle-league schema', () => {
   it('treats accent/case variants of a vulgo as the same name', async () => {
-    const vulgo = await newVulgo('Zé Ramalho')
-    expect(await sqlState(db.insert(vulgos).values({ name: 'ZE RAMALHO', slug: vulgo.slug }))).toBe(
+    const vulgo = await newVulgo('Zé Exemplo')
+    expect(await sqlState(db.insert(vulgos).values({ name: 'ZE EXEMPLO', slug: vulgo.slug }))).toBe(
       UNIQUE,
     )
   })

@@ -2,7 +2,7 @@ import { ConflictError } from '@/shared/lib/errors/base'
 import { err, ok, type Result } from '@/shared/lib/result'
 
 /**
- * URL slugs for public pages (`/leagues/batalha-da-aldeia`,
+ * URL slugs for public pages (`/leagues/batalha-da-esquina-ficticia`,
  * `/mcs/joao-do-morro`). Names are typed by hosts in any language, so the
  * slug drops diacritics ("João" -> "joao") instead of dropping the letter.
  *

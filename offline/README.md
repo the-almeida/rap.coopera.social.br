@@ -91,6 +91,10 @@ Two tests check the repository default, no provider at all, and fail while the s
 
 On the first start `bootstrap.sql` gives the plain database what the Supabase image ships: the `anon`, `authenticated`, `service_role`, `authenticator` and `supabase_auth_admin` roles, the `auth` and `extensions` schemas, `pgcrypto`, and the image's default grants. Then Auth's own migrations run, then `supabase/migrations/`, recorded in `supabase_migrations.schema_migrations` like the Supabase CLI does. Logs are in `.offline/logs/`.
 
+## Rate limiting: no Redis needed
+
+Upstash Redis is the production backend, on Vercel only: serverless runs many instances at once, and they must share one count. Locally and offline the app is one Node process on one machine, so it needs no Redis and nothing reaches the internet. With `KV_REST_API_URL` and `KV_REST_API_TOKEN` empty, as here, it counts in memory: every limit applies as in production (sign-in, sign-up, guest access, battle-night actions, the public API), and one contract suite checks both backends (`src/shared/lib/rate-limit/contract.test-helper.ts`, run by `memory.test.ts` and `redis.integration.test.ts`). Counts start over when the app restarts. The startup warning "not safe for multi-instance production" is about Vercel, not about this machine.
+
 ## Differences from `supabase start`
 
 - **pg_cron.** Distribution packages do not ship it. A stand-in keeps `cron.job` and `cron.schedule`, so the migrations apply, but nothing runs scheduled jobs. To purge expired account deletions, run `SELECT public.purge_expired_account_deletions();`.

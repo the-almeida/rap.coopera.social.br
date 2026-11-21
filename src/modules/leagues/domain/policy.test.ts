@@ -20,8 +20,8 @@ const user = (role: User['role'] = 'user'): User => ({
 
 const league: League = {
   id: LeagueIdSchema.parse('00000000-0000-4000-8000-0000000000aa'),
-  name: 'Aldeia',
-  slug: 'aldeia',
+  name: 'Esquina',
+  slug: 'esquina',
   createdBy: null,
   createdAt: new Date(),
 }
