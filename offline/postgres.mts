@@ -1,7 +1,6 @@
-// The offline stack's database. By default it runs its own cluster in
-// .offline/pgdata with the machine's PostgreSQL binaries (no root, no system
-// service). With OFFLINE_DATABASE_URL set it uses that server instead, which
-// needs a superuser.
+// The offline stack's database: its own cluster in .offline/pgdata, run with
+// the machine's PostgreSQL binaries (no root, no system service, and the
+// system's server, if any, is left alone).
 import { spawnSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -10,9 +9,7 @@ import postgres from 'postgres'
 
 import { PORTS } from './services.mts'
 
-export type Database =
-  | { kind: 'managed'; binDir: string; dataDir: string; logFile: string; url: string }
-  | { kind: 'external'; url: string }
+export type Database = { binDir: string; dataDir: string; logFile: string; url: string }
 
 const MANAGED_URL = `postgresql://postgres:postgres@127.0.0.1:${PORTS.db}/postgres`
 const TOOLS = ['initdb', 'pg_ctl', 'postgres']
@@ -51,17 +48,14 @@ function findBinDir(): string {
   if (!found) {
     throw new Error(
       `PostgreSQL server binaries (${TOOLS.join(', ')}) not found. ` +
-        'Set OFFLINE_PG_BIN to their folder, or OFFLINE_DATABASE_URL to a running server.',
+        'Set OFFLINE_PG_BIN to their folder.',
     )
   }
   return found
 }
 
 export function resolveDatabase(stateDir: string): Database {
-  const external = process.env.OFFLINE_DATABASE_URL
-  if (external) return { kind: 'external', url: external }
   return {
-    kind: 'managed',
     binDir: findBinDir(),
     dataDir: join(stateDir, 'pgdata'),
     logFile: join(stateDir, 'logs', 'postgres.log'),
@@ -73,14 +67,14 @@ function run(binDir: string, tool: string, args: string[]) {
   return spawnSync(join(binDir, tool), args, { encoding: 'utf8' })
 }
 
-export function isManagedRunning(db: Extract<Database, { kind: 'managed' }>): boolean {
+export function isDatabaseRunning(db: Database): boolean {
   return (
     existsSync(db.dataDir) && run(db.binDir, 'pg_ctl', ['status', '-D', db.dataDir]).status === 0
   )
 }
 
 /** Creates the cluster on first use and starts it when it is not running. */
-export function startManaged(db: Extract<Database, { kind: 'managed' }>): void {
+export function startDatabase(db: Database): void {
   if (!existsSync(join(db.dataDir, 'PG_VERSION'))) {
     console.log(`→ Creating a PostgreSQL cluster in ${db.dataDir} (${db.binDir})`)
     // Trust on 127.0.0.1 only, like the CLI's local stack: any password works.
@@ -91,7 +85,7 @@ export function startManaged(db: Extract<Database, { kind: 'managed' }>): void {
     if (init.status !== 0) init = run(db.binDir, 'initdb', [...base, '--no-locale'])
     if (init.status !== 0) throw new Error(`initdb failed:\n${init.stderr}`)
   }
-  if (isManagedRunning(db)) return
+  if (isDatabaseRunning(db)) return
 
   console.log(`→ Starting PostgreSQL on 127.0.0.1:${PORTS.db}`)
   const options = [
@@ -116,8 +110,8 @@ export function startManaged(db: Extract<Database, { kind: 'managed' }>): void {
   }
 }
 
-export function stopManaged(db: Extract<Database, { kind: 'managed' }>): void {
-  if (!isManagedRunning(db)) return
+export function stopDatabase(db: Database): void {
+  if (!isDatabaseRunning(db)) return
   run(db.binDir, 'pg_ctl', ['stop', '-D', db.dataDir, '-m', 'fast'])
 }
 

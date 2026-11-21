@@ -15,8 +15,20 @@ export const PORTS = {
   rest: 54331,
 } as const
 
-export const SITE_URL = 'http://localhost:3000'
+/** config.toml's site_url. The stack follows NEXT_PUBLIC_APP_URL when .env.local sets another. */
+export const DEFAULT_SITE_URL = 'http://localhost:3000'
 export const API_URL = `http://127.0.0.1:${PORTS.gateway}`
+
+/**
+ * The local stand-in for Facebook Login (`offline/mock-facebook.mts`), opt-in
+ * with `start --mock-oauth`. Supabase Auth talks to it as it would to Facebook,
+ * so sign-in and linking run Auth's real OAuth flow. Local-only credentials.
+ */
+export const MOCK_FACEBOOK = {
+  basePath: '/mock-oauth/facebook',
+  clientId: 'offline-mock-facebook',
+  secret: 'offline-mock-facebook-secret',
+} as const
 
 // The Supabase CLI's well-known local secret. Signing the same payloads gives
 // the same anon and service-role keys `supabase start` prints. Local only.
@@ -56,7 +68,13 @@ export function databaseUrls(admin: string): DatabaseUrls {
 }
 
 /** Supabase Auth (GoTrue), configured like config.toml's [auth] sections. */
-export function authEnv(databaseUrl: string, migrationsPath: string): Record<string, string> {
+export type AuthOptions = { siteUrl: string; mockFacebook: boolean }
+
+export function authEnv(
+  databaseUrl: string,
+  migrationsPath: string,
+  { siteUrl, mockFacebook }: AuthOptions,
+): Record<string, string> {
   const verifyUrl = `${API_URL}/auth/v1/verify`
   return {
     API_EXTERNAL_URL: API_URL,
@@ -66,8 +84,8 @@ export function authEnv(databaseUrl: string, migrationsPath: string): Record<str
     GOTRUE_DB_DATABASE_URL: databaseUrl,
     GOTRUE_DB_MIGRATIONS_PATH: migrationsPath,
 
-    GOTRUE_SITE_URL: SITE_URL,
-    GOTRUE_URI_ALLOW_LIST: `${SITE_URL}/**`,
+    GOTRUE_SITE_URL: siteUrl,
+    GOTRUE_URI_ALLOW_LIST: `${siteUrl}/**`,
     GOTRUE_DISABLE_SIGNUP: 'false',
 
     GOTRUE_JWT_SECRET: JWT_SECRET,
@@ -90,9 +108,19 @@ export function authEnv(databaseUrl: string, migrationsPath: string): Record<str
     GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true',
     GOTRUE_EXTERNAL_PHONE_ENABLED: 'false',
     GOTRUE_EXTERNAL_ANONYMOUS_USERS_ENABLED: 'false',
-    // No internet offline, so no Google or Facebook sign-in.
+    // No internet offline. Google has no stand-in: Auth always fetches its
+    // configuration from accounts.google.com, whatever GOTRUE_EXTERNAL_GOOGLE_URL says.
     GOTRUE_EXTERNAL_GOOGLE_ENABLED: 'false',
-    GOTRUE_EXTERNAL_FACEBOOK_ENABLED: 'false',
+    // Facebook's URL can be changed, so the stand-in can take its place.
+    ...(mockFacebook
+      ? {
+          GOTRUE_EXTERNAL_FACEBOOK_ENABLED: 'true',
+          GOTRUE_EXTERNAL_FACEBOOK_CLIENT_ID: MOCK_FACEBOOK.clientId,
+          GOTRUE_EXTERNAL_FACEBOOK_SECRET: MOCK_FACEBOOK.secret,
+          GOTRUE_EXTERNAL_FACEBOOK_REDIRECT_URI: `${API_URL}/auth/v1/callback`,
+          GOTRUE_EXTERNAL_FACEBOOK_URL: `${API_URL}${MOCK_FACEBOOK.basePath}`,
+        }
+      : { GOTRUE_EXTERNAL_FACEBOOK_ENABLED: 'false' }),
 
     GOTRUE_MAILER_AUTOCONFIRM: 'false',
     GOTRUE_MAILER_SECURE_EMAIL_CHANGE_ENABLED: 'true',
