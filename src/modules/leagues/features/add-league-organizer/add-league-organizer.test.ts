@@ -6,9 +6,11 @@ const leagueId = '00000000-0000-4000-8000-000000000000'
 
 describe('addLeagueOrganizerSchema', () => {
   it('normalizes pasted emails before validating', () => {
-    expect(addLeagueOrganizerSchema.parse({ leagueId, login: ' MC@Aldeia.COM ' }).login).toEqual({
+    expect(
+      addLeagueOrganizerSchema.parse({ leagueId, login: ' MC@Esquina.EXAMPLE ' }).login,
+    ).toEqual({
       kind: 'email',
-      email: 'mc@aldeia.com',
+      email: 'mc@esquina.example',
     })
   })
 

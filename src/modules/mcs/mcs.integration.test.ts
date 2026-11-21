@@ -69,13 +69,13 @@ describe('mcs identity', () => {
   it('treats accent/case/spacing variants typed by organizers as one vulgo', async () => {
     const organizer = await account(`Organizer ${run}`)
     const first = unwrap(
-      await findOrCreateVulgo({ name: `Zé  Ramalho ${run}`, createdBy: organizer.id }),
+      await findOrCreateVulgo({ name: `Zé  Exemplo ${run}`, createdBy: organizer.id }),
     )
     const again = unwrap(
-      await findOrCreateVulgo({ name: `ZE RAMALHO ${run}`, createdBy: organizer.id }),
+      await findOrCreateVulgo({ name: `ZE EXEMPLO ${run}`, createdBy: organizer.id }),
     )
     expect(again.id).toBe(first.id)
-    expect(first.name).toBe(`Zé Ramalho ${run}`)
+    expect(first.name).toBe(`Zé Exemplo ${run}`)
     expect(first.mcProfileId).toBeNull()
     expect((await findOrCreateVulgo({ name: '🔥🎤', createdBy: organizer.id })).ok).toBe(false)
   })

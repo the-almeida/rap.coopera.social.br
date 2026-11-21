@@ -6,7 +6,7 @@ import { nextAvailableSlug, resolveUniqueSlug, SLUG_MAX_LENGTH, slugify } from '
 
 describe('slugify', () => {
   it('lowercases and hyphenates words', () => {
-    expect(slugify('Batalha da Aldeia')).toBe('batalha-da-aldeia')
+    expect(slugify('Batalha da Esquina Fictícia')).toBe('batalha-da-esquina-ficticia')
   })
 
   it('strips diacritics instead of dropping letters', () => {
@@ -30,11 +30,11 @@ describe('slugify', () => {
 
 describe('nextAvailableSlug', () => {
   it('returns the base when free', () => {
-    expect(nextAvailableSlug('aldeia', ['aldeia-2'])).toBe('aldeia')
+    expect(nextAvailableSlug('esquina', ['esquina-2'])).toBe('esquina')
   })
 
   it('appends the first free numeric suffix', () => {
-    expect(nextAvailableSlug('aldeia', ['aldeia', 'aldeia-2'])).toBe('aldeia-3')
+    expect(nextAvailableSlug('esquina', ['esquina', 'esquina-2'])).toBe('esquina-3')
   })
 
   it('keeps suffixed slugs within the max length', () => {
@@ -46,18 +46,18 @@ describe('nextAvailableSlug', () => {
 })
 
 describe('resolveUniqueSlug', () => {
-  const existing = ['aldeia', 'aldeia-2']
+  const existing = ['esquina', 'esquina-2']
   const findSlugsLike = async (base: string) =>
     existing.filter((slug) => slug === base || slug.startsWith(`${base}-`))
 
   it('derives a free slug from the name', async () => {
     const result = await resolveUniqueSlug({
       requested: undefined,
-      name: 'Aldeia',
+      name: 'Esquina',
       fallback: 'league',
       findSlugsLike,
     })
-    expect(result).toEqual({ ok: true, value: 'aldeia-3' })
+    expect(result).toEqual({ ok: true, value: 'esquina-3' })
   })
 
   it('uses the fallback when the name has nothing sluggable', async () => {
@@ -72,18 +72,18 @@ describe('resolveUniqueSlug', () => {
 
   it('keeps a free requested slug verbatim', async () => {
     const result = await resolveUniqueSlug({
-      requested: 'aldeia-sp',
-      name: 'Aldeia',
+      requested: 'esquina-sp',
+      name: 'Esquina',
       fallback: 'league',
       findSlugsLike,
     })
-    expect(result).toEqual({ ok: true, value: 'aldeia-sp' })
+    expect(result).toEqual({ ok: true, value: 'esquina-sp' })
   })
 
   it('rejects a taken requested slug instead of silently renaming it', async () => {
     const result = await resolveUniqueSlug({
-      requested: 'aldeia',
-      name: 'Aldeia',
+      requested: 'esquina',
+      name: 'Esquina',
       fallback: 'league',
       findSlugsLike,
     })
