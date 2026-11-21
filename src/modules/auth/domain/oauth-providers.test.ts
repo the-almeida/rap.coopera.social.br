@@ -4,6 +4,7 @@ import {
   activeOAuthProviders,
   facebookDataDeletionSetup,
   findProviderMismatches,
+  oauthProvidersPhrase,
 } from './oauth-providers'
 
 describe('activeOAuthProviders', () => {
@@ -123,5 +124,27 @@ describe('facebookDataDeletionSetup', () => {
         FACEBOOK_OAUTH_CLIENT_SECRET: 'app-secret',
       }),
     ).toEqual({ status: 'ready', appSecret: 'app-secret' })
+  })
+})
+
+describe('oauthProvidersPhrase', () => {
+  it('names the only active provider', () => {
+    expect(oauthProvidersPhrase(['facebook'])).toBe('Facebook')
+  })
+
+  it('joins two providers with "or"', () => {
+    expect(oauthProvidersPhrase(['google', 'facebook'])).toBe('Google or Facebook')
+  })
+
+  it('is empty when no provider is active, so messages can leave providers out', () => {
+    expect(oauthProvidersPhrase([])).toBe('')
+  })
+
+  it('puts a leading option first: a comma between the first ones, "or" before the last', () => {
+    expect(oauthProvidersPhrase([], 'your email')).toBe('your email')
+    expect(oauthProvidersPhrase(['facebook'], 'your email')).toBe('your email or Facebook')
+    expect(oauthProvidersPhrase(['google', 'facebook'], 'your email')).toBe(
+      'your email, Google or Facebook',
+    )
   })
 })

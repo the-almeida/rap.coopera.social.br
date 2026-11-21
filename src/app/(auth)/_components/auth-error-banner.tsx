@@ -3,6 +3,8 @@ type Context = 'sign-in' | 'sign-up'
 type Props = {
   error: string | undefined
   context: Context
+  /** The active OAuth providers as a phrase ("" when none). */
+  providersPhrase: string
 }
 
 /**
@@ -22,9 +24,9 @@ type Props = {
  * error" so we can't distinguish the cause from the error string;
  * pivoting on the originating page is the next best signal.
  */
-export function AuthErrorBanner({ error, context }: Props) {
+export function AuthErrorBanner({ error, context, providersPhrase }: Props) {
   if (!error) return null
-  const message = resolveMessage(error, context)
+  const message = resolveMessage(error, context, providersPhrase)
   if (!message) return null
   return (
     <p
@@ -36,7 +38,7 @@ export function AuthErrorBanner({ error, context }: Props) {
   )
 }
 
-function resolveMessage(error: string, context: Context): string | null {
+function resolveMessage(error: string, context: Context, providersPhrase: string): string | null {
   if (error === 'invalid_callback') {
     return 'The sign-in link was invalid or expired. Please try again.'
   }
@@ -45,7 +47,7 @@ function resolveMessage(error: string, context: Context): string | null {
   }
   if (error === 'oauth_failed') {
     if (context === 'sign-up') {
-      return 'Sign-up failed. If you used Google or Facebook, make sure you granted permission to share your name — that field is required to create an account.'
+      return `Sign-up failed. If you used ${providersPhrase || 'a provider'}, make sure you granted permission to share your name — that field is required to create an account.`
     }
     return 'Sign-in failed. Please try again or use a different method.'
   }

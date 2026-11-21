@@ -11,6 +11,7 @@ type Props = {
 }
 
 export default async function SignInPage({ searchParams }: Props) {
+  const oauthProviders = activeOAuthProviders(env)
   return (
     <AuthEntry
       searchParams={await searchParams}
@@ -18,7 +19,8 @@ export default async function SignInPage({ searchParams }: Props) {
         path: '/sign-in',
         title: 'Sign in',
         crossLink: { prompt: 'New here?', label: 'Create an account', href: '/sign-up' },
-        accountForm: <SignInForm oauthProviders={activeOAuthProviders(env)} />,
+        accountForm: <SignInForm oauthProviders={oauthProviders} />,
+        oauthProviders,
       }}
     />
   )

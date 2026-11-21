@@ -27,6 +27,19 @@ export function activeOAuthProviders(env: Readonly<Record<string, unknown>>): OA
   })
 }
 
+/**
+ * The active providers as one phrase for copy, so messages never name a
+ * provider the page does not offer: "Facebook", "Google or Facebook", or ""
+ * when none is active. A `lead` option comes first ("your email, Google or
+ * Facebook").
+ */
+export function oauthProvidersPhrase(providers: readonly OAuthProvider[], lead?: string): string {
+  const options = [...(lead ? [lead] : []), ...providers.map((p) => OAUTH_PROVIDER_NAME[p])]
+  const last = options.pop()
+  if (last === undefined) return ''
+  return options.length ? `${options.join(', ')} or ${last}` : last
+}
+
 // Sign-in methods Supabase lists under `external` that are not OAuth
 // providers. Anonymous sign-ins have their own check (they must stay off).
 const NOT_OAUTH = new Set(['email', 'phone', 'anonymous_users'])

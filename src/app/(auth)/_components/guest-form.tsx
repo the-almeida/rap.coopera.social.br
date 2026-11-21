@@ -14,9 +14,10 @@ import { continueAsGuest } from '@/modules/auth/client'
  * Guest access with a nickname: one step for a new nickname and a returning
  * one (the server signs in or creates). The same on /sign-in and /sign-up.
  * The warning is part of the deal: a guest account cannot be recovered if
- * the password is lost, until an email or Google/Facebook is added to it.
+ * the password is lost, until an email or an active provider is added to it.
+ * `providersPhrase` names the active OAuth providers ("" when none).
  */
-export function GuestForm() {
+export function GuestForm({ providersPhrase }: { providersPhrase: string }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -59,7 +60,7 @@ export function GuestForm() {
       >
         <strong>Heads up:</strong> a guest account has no email, so it{' '}
         <strong>cannot be recovered</strong> if you forget the password. You can protect it later by
-        adding an email or linking Google or Facebook.
+        adding an email{providersPhrase ? ` or linking ${providersPhrase}` : ''}.
       </p>
       <div className="flex flex-col gap-1">
         <Label htmlFor="nickname">Nickname</Label>

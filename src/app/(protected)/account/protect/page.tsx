@@ -5,6 +5,7 @@ import { env } from '@/shared/lib/env'
 
 import {
   activeOAuthProviders,
+  oauthProvidersPhrase,
   getAccountProtection,
   isGuestAccount,
   requireUser,
@@ -88,7 +89,7 @@ export default async function ProtectAccountPage({ searchParams }: Props) {
 
       {providers.length > 0 ? (
         <section className="border-border space-y-3 rounded-md border p-4">
-          <h2 className="text-lg font-semibold">Link Google or Facebook</h2>
+          <h2 className="text-lg font-semibold">Link {oauthProvidersPhrase(providers)}</h2>
           <p className="text-muted-foreground text-sm">
             Then you can also sign in with the provider, so the account stays reachable if you
             forget the password.

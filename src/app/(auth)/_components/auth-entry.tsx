@@ -1,6 +1,8 @@
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 
+import { type OAuthProvider, oauthProvidersPhrase } from '@/modules/auth'
+
 import { AuthErrorBanner } from './auth-error-banner'
 import { AUTH_METHOD_COOKIE, resolveAuthMethod } from './auth-method'
 import { AuthMethodChooser } from './auth-method-chooser'
@@ -13,6 +15,8 @@ type Page = {
   title: string
   crossLink: { prompt: string; label: string; href: '/sign-in' | '/sign-up' }
   accountForm: React.ReactNode
+  /** The active OAuth providers: copy names only these. */
+  oauthProviders: readonly OAuthProvider[]
 }
 
 type Props = {
@@ -35,6 +39,8 @@ export async function AuthEntry({ page, searchParams }: Props) {
     error,
   })
 
+  const providersPhrase = oauthProvidersPhrase(page.oauthProviders)
+
   if (method === 'guest') {
     // The same on both pages: one action signs in or creates the account.
     return (
@@ -42,7 +48,7 @@ export async function AuthEntry({ page, searchParams }: Props) {
         <header>
           <h1 className="text-xl font-semibold">Quick visitant access with Nickname</h1>
         </header>
-        <GuestForm />
+        <GuestForm providersPhrase={providersPhrase} />
         <OtherWaysLink />
         <RememberAuthMethod method="guest" />
       </div>
@@ -66,7 +72,11 @@ export async function AuthEntry({ page, searchParams }: Props) {
           .
         </p>
       </header>
-      <AuthErrorBanner error={error} context={page.path === '/sign-in' ? 'sign-in' : 'sign-up'} />
+      <AuthErrorBanner
+        error={error}
+        context={page.path === '/sign-in' ? 'sign-in' : 'sign-up'}
+        providersPhrase={providersPhrase}
+      />
       {method === 'account' ? (
         <>
           {page.accountForm}
@@ -74,7 +84,10 @@ export async function AuthEntry({ page, searchParams }: Props) {
           <RememberAuthMethod method="account" />
         </>
       ) : (
-        <AuthMethodChooser basePath={page.path} />
+        <AuthMethodChooser
+          basePath={page.path}
+          accountOptions={oauthProvidersPhrase(page.oauthProviders, 'your email')}
+        />
       )}
     </div>
   )

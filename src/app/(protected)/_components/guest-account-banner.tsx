@@ -15,7 +15,14 @@ import { PROTECT_ACCOUNT_PATH } from '@/modules/auth/client'
  * layout mounted across client-side navigations, so a path read there would
  * be out of date, for example after following the banner's own link.
  */
-export function GuestAccountBanner({ nickname }: { nickname: string | null }) {
+export function GuestAccountBanner({
+  nickname,
+  providersPhrase,
+}: {
+  nickname: string | null
+  /** The active OAuth providers ("" when none): the banner offers only these. */
+  providersPhrase: string
+}) {
   const pathname = usePathname()
   if (pathname === PROTECT_ACCOUNT_PATH) return null
 
@@ -29,8 +36,8 @@ export function GuestAccountBanner({ nickname }: { nickname: string | null }) {
     >
       <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2">
         <p>
-          <strong>{headline}</strong> if you forget the password. Add a verified email or link
-          Google or Facebook to protect it.
+          <strong>{headline}</strong> if you forget the password. Add a verified email
+          {providersPhrase ? ` or link ${providersPhrase}` : ''} to protect it.
         </p>
         <Link
           href={PROTECT_ACCOUNT_PATH}
