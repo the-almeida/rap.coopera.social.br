@@ -4,12 +4,28 @@ set -euo pipefail
 echo "→ Checking system dependencies..."
 
 command -v pnpm >/dev/null || { echo "✗ pnpm not found. Install: https://pnpm.io"; exit 1; }
-command -v docker >/dev/null || { echo "✗ docker not found. Required by the Supabase local stack. Install: https://docs.docker.com/get-docker/"; exit 1; }
-command -v jq >/dev/null || { echo "✗ jq not found. Install: 'apt install jq' or 'brew install jq'"; exit 1; }
 
 required_node=22
 current_node=$(node -v | sed 's/v//' | cut -d. -f1)
 [ "$current_node" -ge "$required_node" ] || { echo "✗ Need Node $required_node+, got $current_node"; exit 1; }
+
+# Without Docker, the offline stack runs the same services natively from
+# vendored binaries (offline/README.md).
+if ! command -v docker >/dev/null; then
+  echo "→ Docker not found: setting up the offline stack (offline/README.md)"
+  # The Supabase CLI's install script downloads its binary from GitHub, which an
+  # offline machine cannot reach, and the offline stack does not use the CLI.
+  # No other install script is needed: native packages ship prebuilt.
+  pnpm install --ignore-scripts
+  # Git hooks; a copy without .git (a zip) has none to install.
+  if git rev-parse --git-dir >/dev/null 2>&1; then pnpm exec husky; fi
+  node offline/stack.mts start
+  echo ""
+  echo "✓ Bootstrap complete. Run: pnpm dev"
+  exit 0
+fi
+
+command -v jq >/dev/null || { echo "✗ jq not found. Install: 'apt install jq' or 'brew install jq'"; exit 1; }
 
 echo "✓ System dependencies OK"
 

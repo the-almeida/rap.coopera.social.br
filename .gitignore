@@ -60,3 +60,6 @@ next-env.d.ts
 supabase/.branches/
 supabase/.temp/
 supabase/snippets/
+
+# Offline stack state: database cluster, unpacked binaries, logs (offline/README.md).
+/.offline/

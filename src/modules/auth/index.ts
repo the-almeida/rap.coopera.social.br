@@ -39,6 +39,7 @@ export {
   activeOAuthProviders,
   facebookDataDeletionSetup,
   type OAuthProvider,
+  oauthProvidersPhrase,
 } from './domain/oauth-providers'
 
 export { cancelAccountDeletion } from './features/account-deletion/cancel-account-deletion.handler'

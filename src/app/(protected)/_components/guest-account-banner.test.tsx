@@ -14,7 +14,7 @@ describe('GuestAccountBanner', () => {
 
   it('shows on protected pages, linking to the protect page', () => {
     pathname.mockReturnValue('/dashboard')
-    render(<GuestAccountBanner nickname="bob" />)
+    render(<GuestAccountBanner nickname="bob" providersPhrase="Google or Facebook" />)
 
     const banner = screen.getByRole('complementary', { name: 'Account protection warning' })
     expect(banner.textContent).toContain("bob, your guest account can't be recovered")
@@ -25,15 +25,33 @@ describe('GuestAccountBanner', () => {
 
   it('hides on the protect page, which it would only repeat', () => {
     pathname.mockReturnValue('/account/protect')
-    render(<GuestAccountBanner nickname="bob" />)
+    render(<GuestAccountBanner nickname="bob" providersPhrase="Google or Facebook" />)
 
     expect(screen.queryByRole('complementary', { name: 'Account protection warning' })).toBeNull()
   })
 
   it('still shows on other account pages', () => {
     pathname.mockReturnValue('/account')
-    render(<GuestAccountBanner nickname={null} />)
+    render(<GuestAccountBanner nickname={null} providersPhrase="Google or Facebook" />)
 
     expect(screen.getByRole('complementary').textContent).toContain('Your guest account')
+  })
+
+  it('offers linking only the providers that are active', () => {
+    pathname.mockReturnValue('/dashboard')
+    render(<GuestAccountBanner nickname="bob" providersPhrase="Facebook" />)
+
+    expect(screen.getByRole('complementary').textContent).toContain(
+      'Add a verified email or link Facebook to protect it.',
+    )
+  })
+
+  it('offers only the email when no provider is active', () => {
+    pathname.mockReturnValue('/dashboard')
+    render(<GuestAccountBanner nickname="bob" providersPhrase="" />)
+
+    const text = screen.getByRole('complementary').textContent
+    expect(text).toContain('Add a verified email to protect it.')
+    expect(text).not.toContain('link')
   })
 })

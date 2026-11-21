@@ -1,7 +1,15 @@
 import { headers } from 'next/headers'
 import { redirect } from 'next/navigation'
 
-import { getAccountProtection, requireUser, resolveProtectedRouteRedirect } from '@/modules/auth'
+import { env } from '@/shared/lib/env'
+
+import {
+  activeOAuthProviders,
+  getAccountProtection,
+  oauthProvidersPhrase,
+  requireUser,
+  resolveProtectedRouteRedirect,
+} from '@/modules/auth'
 
 import { GuestAccountBanner } from './_components/guest-account-banner'
 
@@ -24,7 +32,12 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   const protection = await getAccountProtection(userResult.value)
   return (
     <>
-      {protection.needsProtection ? <GuestAccountBanner nickname={protection.nickname} /> : null}
+      {protection.needsProtection ? (
+        <GuestAccountBanner
+          nickname={protection.nickname}
+          providersPhrase={oauthProvidersPhrase(activeOAuthProviders(env))}
+        />
+      ) : null}
       <main className="flex-1 p-6">{children}</main>
     </>
   )

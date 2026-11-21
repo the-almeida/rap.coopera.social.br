@@ -6,6 +6,8 @@ import type { AuthMethod } from './auth-method'
 
 type Props = {
   basePath: '/sign-in' | '/sign-up'
+  /** How the account can be reached: "your email, Google or Facebook". */
+  accountOptions: string
 }
 
 const ACCOUNT_TITLE = {
@@ -17,7 +19,7 @@ const ACCOUNT_TITLE = {
  * Step 1 of the auth entry: choose the kind of access. The real account is
  * the primary path (first, emphasized); quick nickname access second.
  */
-export function AuthMethodChooser({ basePath }: Props) {
+export function AuthMethodChooser({ basePath, accountOptions }: Props) {
   // The chosen step remembers itself when it renders (RememberAuthMethod).
   const option = (method: AuthMethod) => ({ href: `${basePath}?method=${method}` })
 
@@ -29,7 +31,7 @@ export function AuthMethodChooser({ basePath }: Props) {
       >
         <span className="font-medium">{ACCOUNT_TITLE[basePath]}</span>
         <span className="text-primary-foreground/80 text-xs">
-          With your email, Google or Facebook. Recoverable if you lose access.
+          With {accountOptions}. Recoverable if you lose access.
         </span>
       </Link>
       <Link
